@@ -1,8 +1,8 @@
 use clap::Parser;
-use std::path::PathBuf;
 use itertools::Itertools;
-use uuid::Uuid;
+use std::path::PathBuf;
 use timetrax::az_hash::AZHash;
+use uuid::Uuid;
 
 #[derive(Parser)]
 #[command(name = "TimeTrax")]
@@ -24,12 +24,11 @@ pub enum Command {
     Status,
 }
 
-
 fn main() {
     let args = Args::parse();
     println!("Hello, world!");
 
-    let uuid = (0..10).map(|_ |Uuid::new_v4()).collect_vec();
+    let uuid = (0..10).map(|_| Uuid::new_v4()).collect_vec();
     for uuid in uuid {
         println!("{} {}", uuid, uuid.az_hash())
     }
