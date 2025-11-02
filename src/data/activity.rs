@@ -1,6 +1,6 @@
 use crate::az_hash::AZHash;
 use crate::data::BASIC_TIME_FORMAT;
-use crate::data::day::ActivityClass;
+use crate::data::identifier::Identifier;
 use crate::data::interval::Interval;
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -26,22 +26,20 @@ pub struct Activity {
     /// Optional name of the activity
     pub name: Option<String>,
     /// Activity class, work, break, ...
-    pub class: ActivityClass,
+    pub class: Identifier,
     /// Time spend on the activity
     pub time: Interval,
     /// Optional description
     pub description: Option<String>,
-    /// Optional tags
-    pub tags: Vec<String>,
     /// Projects worked on
-    pub projects: Vec<String>,
+    pub projects: Vec<Identifier>,
 }
 
 impl Display for Activity {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} - {} ({:?}): {}",
+            "{} - {}: {}",
             self.time
                 .start
                 .format(&*BASIC_TIME_FORMAT)
@@ -56,7 +54,6 @@ impl Display for Activity {
                     "<INVALID>".to_string()
                 }))
                 .unwrap_or_else(|| "<OPEN>".to_string()),
-            self.class,
             self.name
                 .clone()
                 .unwrap_or_else(|| "<NO DESCRIPTION>".to_string())

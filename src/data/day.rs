@@ -3,26 +3,6 @@ use crate::data::activity::Activity;
 use crate::data::blocker::Blocker;
 use serde::{Deserialize, Serialize};
 
-/// Activity class, defines the types of activities
-/// the order defines the override order, see `Activity`
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub enum ActivityClass {
-    /// Time worked
-    Work,
-    /// Break time
-    Break,
-    /// Excused due to some reason (e.g. doctor's appointment), counted as work time
-    Excused,
-    /// Vacation days
-    Holiday,
-}
-
-impl ActivityClass {
-    pub fn lowest_priority() -> Self {
-        ActivityClass::Work
-    }
-}
-
 #[derive(Serialize, Deserialize)]
 /// data structure for a single day
 pub struct Day {
@@ -51,18 +31,5 @@ impl Day {
             activities: Vec::new(),
             blockers: Vec::new(),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use time::{Time, UtcDateTime};
-
-    #[test]
-    fn test_priority_activity_classes() {
-        assert!(ActivityClass::Work < ActivityClass::Break);
-        assert!(ActivityClass::Break < ActivityClass::Excused);
-        assert!(ActivityClass::Excused < ActivityClass::Holiday);
     }
 }

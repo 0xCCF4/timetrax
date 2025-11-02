@@ -1,6 +1,6 @@
 use crate::data::activity::Activity;
-use crate::data::day::ActivityClass;
 use crate::data::interval::Interval;
+use crate::data::job_config::JobConfig;
 use itertools::Itertools;
 use log::{error, trace};
 use std::borrow::Borrow;
@@ -17,16 +17,16 @@ impl Activity {
     ///
     /// will return none if no activities are provided or the collapsed start_time > end_time
     pub fn fold_inner<Q: Borrow<Activity>, I: Iterator<Item = Q>>(
+        job_config: &JobConfig,
         activities: I,
         start_time_limit: Option<&Time>,
         end_time_limit: Option<&Time>,
     ) -> Option<Activity> {
         let mut start_time = None;
         let mut end_time = None;
-        let mut class = ActivityClass::lowest_priority();
+        let mut class = job_config.lowest_priority_class();
         let mut names = Vec::new();
         let mut descriptions = Vec::new();
-        let mut tags = Vec::new();
         let mut projects = Vec::new();
 
         for activity in activities {
@@ -45,8 +45,12 @@ impl Activity {
                 end_time = activity.time.end;
             }
 
-            if activity.class > class {
-                class = activity.class;
+            let activity_class = job_config.resolve_class(&activity.class).unwrap_or_else(|| {
+                error!("Class {} not resolved. Did you removed it from the job config? Encountered on activity with ID {}", activity.class, activity.id);
+                job_config.lowest_priority_class()
+            });
+            if activity_class.inner.priority > class.inner.priority {
+                class = activity_class;
             }
 
             if let Some(activity_name) = &activity.name {
@@ -61,16 +65,8 @@ impl Activity {
                 }
             }
 
-            for tag in &activity.tags {
-                if !tags.contains(tag) {
-                    tags.push(tag.clone());
-                }
-            }
-
             for project in &activity.projects {
-                if !projects.contains(project) {
-                    projects.push(project.clone());
-                }
+                projects.push(project.clone());
             }
         }
 
@@ -99,7 +95,6 @@ impl Activity {
 
             descriptions.sort();
             names.sort();
-            tags.sort();
             projects.sort();
 
             Some(Activity {
@@ -111,7 +106,7 @@ impl Activity {
                 } else {
                     Some(names.into_iter().join("; ").into())
                 },
-                class,
+                class: class.id.into(),
                 time: Interval {
                     start: start_time,
                     end: end_time,
@@ -121,7 +116,6 @@ impl Activity {
                 } else {
                     Some(descriptions.into_iter().join("; ").into())
                 },
-                tags,
                 projects,
             })
         } else {
@@ -131,7 +125,10 @@ impl Activity {
 
     /// calculate activity closure for the day
     /// activity closure meaning a linear timeline of non-overlapping activities
-    pub fn calculate_activity_closure<Q: Borrow<Activity>>(activities: &Vec<Q>) -> Vec<Activity> {
+    pub fn calculate_activity_closure<Q: Borrow<Activity>>(
+        job_config: &JobConfig,
+        activities: &Vec<Q>,
+    ) -> Vec<Activity> {
         #[repr(transparent)]
         #[derive(Debug)]
         struct ActivitySortByEndTime<'a>(&'a Activity);
@@ -162,12 +159,14 @@ impl Activity {
         }
         impl Eq for ActivitySortByEndTime<'_> {}
         fn fold_report(
+            job_config: &JobConfig,
             stack: &BinaryHeap<ActivitySortByEndTime>,
             open_ended: &Vec<&Activity>,
             start_time: Option<&Time>,
             end_time: Option<&Time>,
         ) -> Option<Activity> {
             let folded = Activity::fold_inner(
+                job_config,
                 stack
                     .iter()
                     .map(|x| x.0)
@@ -236,6 +235,7 @@ impl Activity {
                     trace!("   -> Dropping activity from stack: {}", top_activity);
 
                     if let Some(folded) = fold_report(
+                        job_config,
                         &activity_stack,
                         &open_ended_activities,
                         last_activity_end.as_ref(),
@@ -257,6 +257,7 @@ impl Activity {
             }
 
             if let Some(folded) = fold_report(
+                job_config,
                 &activity_stack,
                 &open_ended_activities,
                 last_activity_end.as_ref(),
@@ -291,6 +292,7 @@ impl Activity {
             trace!("   -> Dropping activity from stack: {}", activity);
 
             if let Some(folded) = fold_report(
+                job_config,
                 &activity_stack,
                 &open_ended_activities,
                 last_activity_end.as_ref(),
@@ -311,23 +313,43 @@ impl Activity {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::data::activity_class::ActivityClass;
+    use crate::data::identifier::Identifier;
     use time::{Time, UtcDateTime};
 
     #[test]
-    #[test_log::test]
     fn test_fold_activities() {
+        let job_config = JobConfig {
+            classes: vec![
+                ActivityClass {
+                    id: Uuid::from_u128(1),
+                    inner: crate::data::activity_class::ActivityClassInner {
+                        name: "work".into(),
+                        priority: 1,
+                        description: None,
+                    },
+                },
+                ActivityClass {
+                    id: Uuid::from_u128(2),
+                    inner: crate::data::activity_class::ActivityClassInner {
+                        name: "break".into(),
+                        priority: 2,
+                        description: None,
+                    },
+                },
+            ],
+        };
         let work_day = Activity {
             id: Uuid::nil(),
             created_at: UtcDateTime::MIN,
             modified_at: UtcDateTime::MIN,
             name: Some("Working at the office".into()),
-            class: ActivityClass::Work,
+            class: Identifier::ByName("work".into()),
             time: Interval {
                 start: Time::from_hms(9, 0, 0).unwrap(),
                 end: Some(Time::from_hms(18, 0, 0).unwrap()),
             },
             description: None,
-            tags: vec![],
             projects: vec![],
         };
         let break_time = Activity {
@@ -335,13 +357,12 @@ mod tests {
             created_at: UtcDateTime::MIN,
             modified_at: UtcDateTime::MIN,
             name: Some("Lunch break".into()),
-            class: ActivityClass::Break,
+            class: Identifier::ByName("break".into()),
             time: Interval {
                 start: Time::from_hms(12, 0, 0).unwrap(),
                 end: Some(Time::from_hms(13, 0, 0).unwrap()),
             },
             description: None,
-            tags: vec![],
             projects: vec![],
         };
         let project_meeting = Activity {
@@ -349,13 +370,12 @@ mod tests {
             created_at: UtcDateTime::MIN,
             modified_at: UtcDateTime::MIN,
             name: Some("Project meeting".into()),
-            class: ActivityClass::Work,
+            class: Identifier::ByName("work".into()),
             time: Interval {
                 start: Time::from_hms(10, 0, 0).unwrap(),
                 end: Some(Time::from_hms(11, 0, 0).unwrap()),
             },
             description: None,
-            tags: vec![],
             projects: vec![],
         };
 
@@ -364,13 +384,12 @@ mod tests {
             created_at: UtcDateTime::MIN,
             modified_at: UtcDateTime::MIN,
             name: Some("Project meeting 2".into()),
-            class: ActivityClass::Work,
+            class: Identifier::ByName("work".into()),
             time: Interval {
                 start: Time::from_hms(10, 30, 0).unwrap(),
                 end: Some(Time::from_hms(11, 30, 0).unwrap()),
             },
             description: None,
-            tags: vec![],
             projects: vec![],
         };
 
@@ -379,13 +398,12 @@ mod tests {
             created_at: UtcDateTime::MIN,
             modified_at: UtcDateTime::MIN,
             name: Some("Project meeting 3".into()),
-            class: ActivityClass::Work,
+            class: Identifier::ByName("work".into()),
             time: Interval {
                 start: Time::from_hms(13, 0, 0).unwrap(),
                 end: Some(Time::from_hms(14, 0, 0).unwrap()),
             },
             description: None,
-            tags: vec![],
             projects: vec![],
         };
 
@@ -397,7 +415,7 @@ mod tests {
             project_meeting3,
         ];
 
-        let closure = Activity::calculate_activity_closure(&day);
+        let closure = Activity::calculate_activity_closure(&job_config, &day);
         for activity in &closure {
             println!(" - {}", activity);
         }
@@ -405,35 +423,43 @@ mod tests {
         assert_eq!(closure.len(), 8);
         assert_eq!(
             format!("{}", closure[0]),
-            "09:00:00 - 10:00:00 (Work): Working at the office"
+            "09:00:00 - 10:00:00: Working at the office"
         );
+        assert_eq!(closure[0].class, Uuid::from_u128(1).into());
         assert_eq!(
             format!("{}", closure[1]),
-            "10:00:00 - 10:30:00 (Work): Project meeting; Working at the office"
+            "10:00:00 - 10:30:00: Project meeting; Working at the office"
         );
+        assert_eq!(closure[1].class, Uuid::from_u128(1).into());
         assert_eq!(
             format!("{}", closure[2]),
-            "10:30:00 - 11:00:00 (Work): Project meeting; Project meeting 2; Working at the office"
+            "10:30:00 - 11:00:00: Project meeting; Project meeting 2; Working at the office"
         );
+        assert_eq!(closure[2].class, Uuid::from_u128(1).into());
         assert_eq!(
             format!("{}", closure[3]),
-            "11:00:00 - 11:30:00 (Work): Project meeting 2; Working at the office"
+            "11:00:00 - 11:30:00: Project meeting 2; Working at the office"
         );
+        assert_eq!(closure[3].class, Uuid::from_u128(1).into());
         assert_eq!(
             format!("{}", closure[4]),
-            "11:30:00 - 12:00:00 (Work): Working at the office"
+            "11:30:00 - 12:00:00: Working at the office"
         );
+        assert_eq!(closure[4].class, Uuid::from_u128(1).into());
         assert_eq!(
             format!("{}", closure[5]),
-            "12:00:00 - 13:00:00 (Break): Lunch break; Working at the office"
+            "12:00:00 - 13:00:00: Lunch break; Working at the office"
         );
+        assert_eq!(closure[5].class, Uuid::from_u128(2).into());
         assert_eq!(
             format!("{}", closure[6]),
-            "13:00:00 - 14:00:00 (Work): Project meeting 3; Working at the office"
+            "13:00:00 - 14:00:00: Project meeting 3; Working at the office"
         );
+        assert_eq!(closure[6].class, Uuid::from_u128(1).into());
         assert_eq!(
             format!("{}", closure[7]),
-            "14:00:00 - 18:00:00 (Work): Working at the office"
+            "14:00:00 - 18:00:00: Working at the office"
         );
+        assert_eq!(closure[7].class, Uuid::from_u128(1).into());
     }
 }

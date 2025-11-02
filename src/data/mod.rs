@@ -1,11 +1,15 @@
 use std::sync::LazyLock;
 use time::format_description;
 
-mod activity;
+pub mod activity;
+mod activity_class;
 pub mod activity_closure;
-mod blocker;
+pub mod app_config;
+pub mod blocker;
 pub mod day;
-mod interval;
+pub mod identifier;
+pub mod interval;
+pub mod job_config;
 pub mod local_time;
 
 static BASIC_TIME_FORMAT: LazyLock<Vec<format_description::BorrowedFormatItem<'_>>> =
