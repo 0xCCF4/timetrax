@@ -10,21 +10,18 @@ use uuid::Uuid;
 pub struct Blocker {
     /// Unique id, used for editing reference
     pub id: Uuid,
-    /// created
-    #[serde(default = "time::UtcDateTime::now")]
-    pub created_at: time::UtcDateTime,
-    /// modified
-    #[serde(default = "time::UtcDateTime::now")]
-    pub modified_at: time::UtcDateTime,
     /// Optional name of the activity
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub name: Option<String>,
     /// Activity class, work, break, ...
     pub class: Identifier,
     /// Blocked time spend on the activity
     pub time: Interval,
     /// Optional description
+    #[serde(skip_serializing_if = "Option::is_none", default)]
     pub description: Option<String>,
     /// Projects worked on
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub projects: Vec<Identifier>,
 }
 

@@ -6,7 +6,7 @@ use log::{error, trace};
 use std::borrow::Borrow;
 use std::collections::BinaryHeap;
 use std::fmt::{Display, Formatter};
-use time::{Time, UtcDateTime};
+use time::Time;
 use uuid::Uuid;
 
 impl Activity {
@@ -99,8 +99,6 @@ impl Activity {
 
             Some(Activity {
                 id: Uuid::new_v4(),
-                created_at: UtcDateTime::now(),
-                modified_at: UtcDateTime::now(),
                 name: if names.len() == 0 {
                     None
                 } else {
@@ -341,8 +339,6 @@ mod tests {
         };
         let work_day = Activity {
             id: Uuid::nil(),
-            created_at: UtcDateTime::MIN,
-            modified_at: UtcDateTime::MIN,
             name: Some("Working at the office".into()),
             class: Identifier::ByName("work".into()),
             time: Interval {
@@ -354,8 +350,6 @@ mod tests {
         };
         let break_time = Activity {
             id: Uuid::nil(),
-            created_at: UtcDateTime::MIN,
-            modified_at: UtcDateTime::MIN,
             name: Some("Lunch break".into()),
             class: Identifier::ByName("break".into()),
             time: Interval {
@@ -367,8 +361,6 @@ mod tests {
         };
         let project_meeting = Activity {
             id: Uuid::nil(),
-            created_at: UtcDateTime::MIN,
-            modified_at: UtcDateTime::MIN,
             name: Some("Project meeting".into()),
             class: Identifier::ByName("work".into()),
             time: Interval {
@@ -381,8 +373,6 @@ mod tests {
 
         let project_meeting2 = Activity {
             id: Uuid::nil(),
-            created_at: UtcDateTime::MIN,
-            modified_at: UtcDateTime::MIN,
             name: Some("Project meeting 2".into()),
             class: Identifier::ByName("work".into()),
             time: Interval {
@@ -395,8 +385,6 @@ mod tests {
 
         let project_meeting3 = Activity {
             id: Uuid::nil(),
-            created_at: UtcDateTime::MIN,
-            modified_at: UtcDateTime::MIN,
             name: Some("Project meeting 3".into()),
             class: Identifier::ByName("work".into()),
             time: Interval {

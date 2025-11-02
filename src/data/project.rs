@@ -3,30 +3,21 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
 use uuid::Uuid;
 
-/// activity class data
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct ActivityClassInner {
-    /// its name
+pub struct ProjectInner {
     pub name: String,
-    /// its priority for linearization and closure computation
-    pub priority: i32,
-    /// optional description
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub description: Option<String>,
 }
 
-/// an activity class with unique id
 #[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct ActivityClass {
-    /// unique identifier
+pub struct Project {
     pub id: Uuid,
-    /// data
     #[serde(flatten)]
-    pub inner: ActivityClassInner,
+    pub inner: ProjectInner,
 }
 
-impl ActivityClass {
-    /// check if identifier matches this class
+impl Project {
     pub fn identifier_matches<Q: Borrow<Identifier>>(&self, identifier: Q) -> bool {
         match identifier.borrow() {
             Identifier::Uuid(id) => &self.id == id,
