@@ -201,7 +201,7 @@ impl<'a> Manager<'a> {
                     .data_path
                     .join(self.app_config.job_day_folder_format.as_str())
                     .join(date_format)
-                    .with_added_extension("json");
+                    .with_extension("json");
 
                 trace!("Saving new day for date {} to {}", date, day_path.display());
 
