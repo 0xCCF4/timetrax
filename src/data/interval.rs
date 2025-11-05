@@ -4,8 +4,13 @@ use serde::{Deserialize, Serialize};
 /// Specified time interval, may be open-ended
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Interval {
+    #[serde(with = "crate::serde::pretty_time")]
     pub start: time::Time,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        default,
+        with = "crate::serde::pretty_time_option"
+    )]
     pub end: Option<time::Time>,
 }
 

@@ -3,6 +3,7 @@ use clap::Parser;
 use log::{error, info};
 use time::OffsetDateTime;
 use timetrax::data::app_config::AppConfig;
+use timetrax::data::job_config::JobConfig;
 use timetrax::data::manager::Manager;
 
 #[derive(Parser)]
@@ -13,7 +14,8 @@ impl ExecutableCommand for CommandPop {
     type Output = ();
     fn execute(
         &self,
-        config: &AppConfig,
+        _config: &AppConfig,
+        _job_config: &mut JobConfig,
         mut manager: Manager,
     ) -> Result<Self::Output, Self::Error> {
         let today = OffsetDateTime::now_local()
@@ -23,7 +25,7 @@ impl ExecutableCommand for CommandPop {
             })
             .date();
 
-        let mut today = manager.get_or_create_day(today);
+        let today = manager.get_or_create_day(today);
 
         if !today.inner().activities.is_empty() {
             let today = today.inner_mut();

@@ -26,7 +26,6 @@ impl Activity {
         let mut end_time = None;
         let mut class = job_config.lowest_priority_class();
         let mut names = Vec::new();
-        let mut descriptions = Vec::new();
         let mut projects = Vec::new();
 
         for activity in activities {
@@ -59,12 +58,6 @@ impl Activity {
                 }
             }
 
-            if let Some(activity_description) = &activity.description {
-                if !descriptions.contains(activity_description) {
-                    descriptions.push(activity_description.clone());
-                }
-            }
-
             for project in &activity.projects {
                 projects.push(project.clone());
             }
@@ -93,7 +86,6 @@ impl Activity {
                 }
             }
 
-            descriptions.sort();
             names.sort();
             projects.sort();
 
@@ -109,11 +101,6 @@ impl Activity {
                     start: start_time,
                     end: end_time,
                 },
-                description: if descriptions.len() == 0 {
-                    None
-                } else {
-                    Some(descriptions.into_iter().join("; ").into())
-                },
                 projects,
             })
         } else {
@@ -126,6 +113,8 @@ impl Activity {
     pub fn calculate_activity_closure<Q: Borrow<Activity>>(
         job_config: &JobConfig,
         activities: &Vec<Q>,
+        start: Option<Time>,
+        end: Option<Time>,
     ) -> Vec<Activity> {
         #[repr(transparent)]
         #[derive(Debug)]
@@ -197,6 +186,12 @@ impl Activity {
                     }
                 }
                 None
+            }
+        }
+
+        if let (Some(start), Some(end)) = (start, end) {
+            if start >= end {
+                return Vec::new();
             }
         }
 
@@ -304,7 +299,51 @@ impl Activity {
             drop(activity_stack.pop());
         }
 
-        closure
+        if open_ended_activities.len() > 0 {
+            trace!("   -> Folding remaining open-ended activities");
+            if let Some(folded) = fold_report(
+                job_config,
+                &activity_stack,
+                &open_ended_activities,
+                last_activity_end.as_ref(),
+                None,
+            ) {
+                closure.push(folded);
+            }
+        }
+
+        if start.is_none() && end.is_none() {
+            return closure;
+        }
+
+        trace!("Clamping closure to provided time limits");
+        let mut result = Vec::with_capacity(closure.len());
+
+        for mut activity in closure.into_iter() {
+            trace!(" --> Processing activity: {}", activity);
+            if let Some(start) = start {
+                if activity.time.end_time_or_end_of_day() < start {
+                    continue;
+                }
+
+                if activity.time.start < start && activity.time.end_time_or_end_of_day() > start {
+                    activity.time.start = start;
+                }
+            }
+            if let Some(end) = end {
+                if activity.time.start >= end {
+                    continue;
+                }
+
+                if activity.time.end_time_or_end_of_day() > end && activity.time.start < end {
+                    activity.time.end = Some(end);
+                }
+            }
+
+            result.push(activity);
+        }
+
+        result
     }
 }
 

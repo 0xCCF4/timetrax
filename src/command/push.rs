@@ -1,12 +1,12 @@
 use crate::command::ExecutableCommand;
 use clap::Parser;
-use log::{error, info, trace};
+use log::{error, info};
 use time::OffsetDateTime;
-use time::format_description::well_known::iso8601::FormattedComponents::DateTime;
 use timetrax::data::activity::Activity;
 use timetrax::data::app_config::AppConfig;
 use timetrax::data::identifier::Identifier;
 use timetrax::data::interval::Interval;
+use timetrax::data::job_config::JobConfig;
 use timetrax::data::manager::Manager;
 use uuid::Uuid;
 
@@ -31,7 +31,8 @@ impl ExecutableCommand for CommandPush {
     type Output = ();
     fn execute(
         &self,
-        config: &AppConfig,
+        _config: &AppConfig,
+        job_config: &mut JobConfig,
         mut manager: Manager,
     ) -> Result<Self::Output, Self::Error> {
         let today = OffsetDateTime::now_local()
@@ -41,7 +42,7 @@ impl ExecutableCommand for CommandPush {
             })
             .date();
 
-        if let None = manager.job_config().resolve_class(&self.classification) {
+        if let None = job_config.resolve_class(&self.classification) {
             error!(
                 "Failed to resolve classification: {:?}",
                 self.classification
@@ -55,7 +56,7 @@ impl ExecutableCommand for CommandPush {
         if let Err(err) = self
             .project
             .iter()
-            .map(|id| match manager.job_config().resolve_project(id) {
+            .map(|id| match job_config.resolve_project(id) {
                 Some(p) => Ok(p),
                 None => {
                     error!("Failed to resolve project: {:?}", id);
@@ -76,7 +77,6 @@ impl ExecutableCommand for CommandPush {
             id: Uuid::new_v4(),
             class: self.classification.clone(),
             name: self.named.clone(),
-            description: self.description.clone(),
             projects: self.project.clone(),
             time: Interval::start_now(),
         };

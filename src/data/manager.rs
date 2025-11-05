@@ -49,13 +49,15 @@ impl AnnotatedDayInformation {
 pub struct Manager<'a> {
     app_config: &'a AppConfig,
     data_path: PathBuf,
-    job: JobConfig,
 
     days: BTreeMap<Date, AnnotatedDayInformation>,
 }
 
 impl<'a> Manager<'a> {
-    pub fn open<P: AsRef<Path>>(app_config: &'a AppConfig, data_path: P) -> std::io::Result<Self> {
+    pub fn open_job_config<P: AsRef<Path>>(
+        app_config: &'a AppConfig,
+        data_path: P,
+    ) -> std::io::Result<JobConfig> {
         let data_path = data_path.as_ref();
 
         let job_config_path = data_path.join(&app_config.job_config_file_name);
@@ -84,6 +86,11 @@ impl<'a> Manager<'a> {
                 job
             }
         };
+
+        Ok(job)
+    }
+    pub fn open<P: AsRef<Path>>(app_config: &'a AppConfig, data_path: P) -> std::io::Result<Self> {
+        let data_path = data_path.as_ref();
 
         let mut days = BTreeMap::new();
         let day_folder_path = data_path.join(&app_config.job_day_folder_format);
@@ -145,7 +152,6 @@ impl<'a> Manager<'a> {
         Ok(Manager {
             days,
             app_config,
-            job,
             data_path: data_path.to_path_buf(),
         })
     }
@@ -205,7 +211,7 @@ impl<'a> Manager<'a> {
 
                 trace!("Saving new day for date {} to {}", date, day_path.display());
 
-                let file = match File::create(&day_path) {
+                let file = match File::create_new(&day_path) {
                     Err(e) => {
                         error!(
                             "Failed to open day file for writing at {}: {}",
@@ -242,8 +248,8 @@ impl<'a> Manager<'a> {
 
     pub fn get_or_create_day(&mut self, date: Date) -> &mut AnnotatedDayInformation {
         self.days.entry(date).or_insert_with(|| {
-            let mut x = AnnotatedDayInformation::new(DayInner::default(), None);
-            x.inner_mut().work_quota = self.app_config.work_quota_default;
+            let x = AnnotatedDayInformation::new(DayInner::default(), None);
+
             x
         })
     }
@@ -254,10 +260,6 @@ impl<'a> Manager<'a> {
 
     pub fn get_or_create_day_mut(&mut self, date: Date) -> &mut DayInner {
         self.get_or_create_day(date).inner_mut()
-    }
-
-    pub fn job_config(&self) -> &JobConfig {
-        &self.job
     }
 }
 

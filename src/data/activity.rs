@@ -24,9 +24,6 @@ pub struct Activity {
     pub class: Identifier,
     /// Time spend on the activity
     pub time: Interval,
-    /// Optional description
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub description: Option<String>,
     /// Projects worked on
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub projects: Vec<Identifier>,
