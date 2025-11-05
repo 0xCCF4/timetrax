@@ -1,8 +1,10 @@
 mod pop;
+mod project;
 mod push;
 mod status;
 
 pub use pop::*;
+pub use project::*;
 pub use push::*;
 pub use status::*;
 

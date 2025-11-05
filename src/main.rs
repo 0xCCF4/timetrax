@@ -1,4 +1,4 @@
-use crate::command::{CommandPop, CommandPush, CommandStatus, ExecutableCommand};
+use crate::command::{CommandPop, CommandProject, CommandPush, CommandStatus, ExecutableCommand};
 use clap::Parser;
 use log::{debug, error, info, trace};
 use std::fs;
@@ -32,6 +32,9 @@ pub enum Command {
     Pop(CommandPop),
     /// Status of current activities
     Status(CommandStatus),
+    /// Manage projects
+    #[command(subcommand)]
+    Projects(CommandProject),
 }
 
 impl Default for Command {
@@ -53,6 +56,7 @@ impl ExecutableCommand for Command {
             Command::Push(cmd) => cmd.execute(config, job_config, manager),
             Command::Pop(cmd) => cmd.execute(config, job_config, manager),
             Command::Status(cmd) => cmd.execute(config, job_config, manager),
+            Command::Projects(cmd) => cmd.execute(config, job_config, manager),
         }
     }
 }
