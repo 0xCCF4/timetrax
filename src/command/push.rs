@@ -17,7 +17,7 @@ pub struct CommandPush {
     project: Vec<Identifier>,
     /// Short name for the activity
     #[arg(short, long)]
-    named: Option<String>,
+    name: Option<String>,
     /// Description of the activity
     #[arg(short, long)]
     description: Option<String>,
@@ -76,7 +76,7 @@ impl ExecutableCommand for CommandPush {
         let activity = Activity {
             id: Uuid::new_v4(),
             class: self.classification.clone(),
-            name: self.named.clone(),
+            name: self.name.clone(),
             projects: self.project.clone(),
             time: Interval::start_now(),
         };
