@@ -1,16 +1,18 @@
+use timetrax::data::app_config::AppConfig;
+use timetrax::data::job_config::JobConfig;
+use timetrax::data::manager::Manager;
+
 mod pop;
 mod project;
 mod push;
 mod status;
+mod class;
 
 pub use pop::*;
 pub use project::*;
 pub use push::*;
 pub use status::*;
-
-use timetrax::data::app_config::AppConfig;
-use timetrax::data::job_config::JobConfig;
-use timetrax::data::manager::Manager;
+pub use class::*;
 
 pub trait ExecutableCommand {
     type Error;

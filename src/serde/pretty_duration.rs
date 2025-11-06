@@ -1,5 +1,3 @@
-/// pretty print a duration
-pub mod pretty_duration_serde {
     use serde::Deserialize;
     use std::sync::LazyLock;
     use time::Duration;
@@ -62,4 +60,3 @@ pub mod pretty_duration_serde {
             + Duration::minutes(minutes as i64)
             + Duration::seconds(seconds as i64))
     }
-}

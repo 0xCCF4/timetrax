@@ -1,4 +1,4 @@
-use crate::command::{CommandPop, CommandProject, CommandPush, CommandStatus, ExecutableCommand};
+use crate::command::{CommandClass, CommandPop, CommandProject, CommandPush, CommandStatus, ExecutableCommand};
 use clap::Parser;
 use log::{debug, error, info, trace};
 use std::fs;
@@ -27,14 +27,20 @@ pub struct Args {
 #[derive(Parser)]
 pub enum Command {
     /// Push new activity to the stack
+    #[clap(aliases = ["pu"])]
     Push(CommandPush),
     /// Pop the most recent activity from the stack
+    #[clap(aliases = ["po"])]
     Pop(CommandPop),
     /// Status of current activities
+    #[clap(aliases = ["s", "st", "stat", "info", "i", "display"])]
     Status(CommandStatus),
     /// Manage projects
-    #[command(subcommand)]
-    Projects(CommandProject),
+    #[command(subcommand, aliases = ["projects", "proj", "prj", "p"])]
+    Project(CommandProject),
+    /// Manage activity classes
+    #[command(subcommand, aliases = ["classes", "cls", "c", "ac"])]
+    Class(CommandClass),
 }
 
 impl Default for Command {
@@ -56,7 +62,8 @@ impl ExecutableCommand for Command {
             Command::Push(cmd) => cmd.execute(config, job_config, manager),
             Command::Pop(cmd) => cmd.execute(config, job_config, manager),
             Command::Status(cmd) => cmd.execute(config, job_config, manager),
-            Command::Projects(cmd) => cmd.execute(config, job_config, manager),
+            Command::Project(cmd) => cmd.execute(config, job_config, manager),
+            Command::Class(cmd) => cmd.execute(config, job_config, manager),
         }
     }
 }
