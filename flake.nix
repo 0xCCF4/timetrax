@@ -21,7 +21,6 @@
             gitAllRefs = true;
             meta.mainProgram = "timetrax";
           };
-          packages.tt = pkgs.writeShellScriptBin "tt" ''exec ${lib.getExe packages.default} "$@"'';
         };
     };
 }
