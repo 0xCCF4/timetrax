@@ -1,72 +1,13 @@
-use crate::command::{CommandClass, CommandPop, CommandProject, CommandPush, CommandStatus, ExecutableCommand};
 use clap::Parser;
 use log::{debug, error, info, trace};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
+use timetrax::cli::{AppArgs, Command, ExecutableCommand};
 use timetrax::data::app_config::AppConfig;
 use timetrax::data::dirty::DirtyMarker;
 use timetrax::data::job_config::JobConfig;
 use timetrax::data::manager::Manager;
-
-pub mod command;
-
-#[derive(Parser)]
-#[command(name = "TimeTrax")]
-pub struct Args {
-    #[command(subcommand)]
-    pub command: Option<Command>,
-
-    /// Path to the folder to which time tracking data will be saved
-    #[arg(short, long)]
-    pub data_path: Option<PathBuf>,
-    // /// App configuration file. If not provided, default config will be used
-    // #[arg(short, long)]
-    // pub config: Option<PathBuf>,
-}
-
-#[derive(Parser)]
-pub enum Command {
-    /// Push new activity to the stack
-    #[clap(aliases = ["pu"])]
-    Push(CommandPush),
-    /// Pop the most recent activity from the stack
-    #[clap(aliases = ["po"])]
-    Pop(CommandPop),
-    /// Status of current activities
-    #[clap(aliases = ["s", "st", "stat", "info", "i", "display"])]
-    Status(CommandStatus),
-    /// Manage projects
-    #[command(subcommand, aliases = ["projects", "proj", "prj", "p"])]
-    Project(CommandProject),
-    /// Manage activity classes
-    #[command(subcommand, aliases = ["classes", "cls", "c", "ac"])]
-    Class(CommandClass),
-}
-
-impl Default for Command {
-    fn default() -> Self {
-        Command::Status(CommandStatus::default())
-    }
-}
-
-impl ExecutableCommand for Command {
-    type Error = std::io::Error;
-    type Output = ();
-    fn execute(
-        &self,
-        config: &AppConfig,
-        job_config: &mut JobConfig,
-        manager: Manager,
-    ) -> Result<Self::Output, Self::Error> {
-        match self {
-            Command::Push(cmd) => cmd.execute(config, job_config, manager),
-            Command::Pop(cmd) => cmd.execute(config, job_config, manager),
-            Command::Status(cmd) => cmd.execute(config, job_config, manager),
-            Command::Project(cmd) => cmd.execute(config, job_config, manager),
-            Command::Class(cmd) => cmd.execute(config, job_config, manager),
-        }
-    }
-}
 
 fn main() {
     env_logger::init();
@@ -76,8 +17,27 @@ fn main() {
         option_env!("CARGO_PKG_VERSION").unwrap_or("<UNKNOWN>")
     );
 
-    let args = Args::parse();
+    let args = AppArgs::parse();
     let config = AppConfig::default();
+
+    if let Some(command) = &args.command {
+        if let Command::Completion(_) = command {
+            trace!("Completion command detected, skipping data path setup.");
+            if let Err(err) = command.execute(
+                &config,
+                &mut JobConfig::default(),
+                Manager {
+                    app_config: &config,
+                    days: BTreeMap::new(),
+                    data_path: PathBuf::new(),
+                },
+            ) {
+                error!("Command execution failed: {}", err);
+                std::process::exit(1);
+            }
+            return;
+        }
+    }
 
     let data_path = args.data_path.unwrap_or_else(|| {
         trace!("No data path provided, using default.");

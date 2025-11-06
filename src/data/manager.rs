@@ -47,10 +47,10 @@ impl AnnotatedDayInformation {
 }
 
 pub struct Manager<'a> {
-    app_config: &'a AppConfig,
-    data_path: PathBuf,
+    pub app_config: &'a AppConfig,
+    pub data_path: PathBuf,
 
-    days: BTreeMap<Date, AnnotatedDayInformation>,
+    pub days: BTreeMap<Date, AnnotatedDayInformation>,
 }
 
 impl<'a> Manager<'a> {

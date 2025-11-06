@@ -1,12 +1,12 @@
-use crate::command::ExecutableCommand;
+use crate::cli::ExecutableCommand;
+use crate::data::activity_class::{ActivityClass, ActivityClassInner};
+use crate::data::app_config::AppConfig;
+use crate::data::identifier::Identifier;
+use crate::data::job_config::JobConfig;
+use crate::data::manager::Manager;
 use clap::Parser;
 use log::error;
-use timetrax::data::app_config::AppConfig;
-use timetrax::data::identifier::Identifier;
-use timetrax::data::job_config::JobConfig;
-use timetrax::data::manager::Manager;
 use uuid::Uuid;
-use timetrax::data::activity_class::{ActivityClass, ActivityClassInner};
 
 #[derive(Parser, Default)]
 pub enum CommandClass {
@@ -63,7 +63,11 @@ impl ExecutableCommand for CommandClass {
                     }
                 }
             }
-            CommandClass::Add { name, description, priority } => {
+            CommandClass::Add {
+                name,
+                description,
+                priority,
+            } => {
                 if job_config.classes.iter().any(|p| p.inner.name == *name) {
                     error!("Activity class with name '{}' already exists", name);
                     return Err(std::io::Error::new(
@@ -103,6 +107,8 @@ impl ExecutableCommand for CommandClass {
                 } else {
                     println!("Removed activity class: {:?}", class);
                 }
+
+                // todo remove reference from other activities
             }
         }
 

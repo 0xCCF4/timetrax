@@ -1,10 +1,11 @@
-use crate::command::ExecutableCommand;
+use crate::cli::ExecutableCommand;
+use crate::data::app_config::AppConfig;
+use crate::data::identifier::Identifier;
+use crate::data::job_config::JobConfig;
+use crate::data::manager::Manager;
+use crate::data::project::{Project, ProjectInner};
 use clap::Parser;
 use log::error;
-use timetrax::data::app_config::AppConfig;
-use timetrax::data::identifier::Identifier;
-use timetrax::data::job_config::JobConfig;
-use timetrax::data::manager::Manager;
 use uuid::Uuid;
 
 #[derive(Parser, Default)]
@@ -69,9 +70,9 @@ impl ExecutableCommand for CommandProject {
                     ));
                 }
 
-                let new_project = timetrax::data::project::Project {
+                let new_project = Project {
                     id: Uuid::new_v4(),
-                    inner: timetrax::data::project::ProjectInner {
+                    inner: ProjectInner {
                         name: name.clone(),
                         description: description.clone(),
                     },
@@ -99,6 +100,8 @@ impl ExecutableCommand for CommandProject {
                 } else {
                     println!("Removed project: {:?}", project);
                 }
+
+                // todo remove reference from other activities
             }
         }
 

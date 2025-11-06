@@ -1,6 +1,7 @@
 use crate::az_hash::AZHash;
 use crate::data::activity::Activity;
 use crate::data::blocker::Blocker;
+use crate::data::quota::Quota;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -13,7 +14,7 @@ pub struct Day {
     pub inner: DayInner,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DayInner {
     /// blockers
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
@@ -21,15 +22,9 @@ pub struct DayInner {
     /// activities
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub activities: Vec<Activity>,
-}
-
-impl Default for DayInner {
-    fn default() -> Self {
-        Self {
-            activities: Vec::new(),
-            blockers: Vec::new(),
-        }
-    }
+    /// quotas
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub quotas: Vec<Quota>,
 }
 
 impl AZHash for Day {
@@ -43,10 +38,7 @@ impl Day {
     pub fn new(date: time::Date) -> Self {
         Self {
             date,
-            inner: DayInner {
-                activities: Vec::new(),
-                blockers: Vec::new(),
-            },
+            inner: DayInner::default(),
         }
     }
 }

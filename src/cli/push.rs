@@ -1,13 +1,13 @@
-use crate::command::ExecutableCommand;
+use crate::cli::ExecutableCommand;
+use crate::data::activity::Activity;
+use crate::data::app_config::AppConfig;
+use crate::data::identifier::Identifier;
+use crate::data::interval::Interval;
+use crate::data::job_config::JobConfig;
+use crate::data::manager::Manager;
 use clap::Parser;
 use log::{error, info};
 use time::OffsetDateTime;
-use timetrax::data::activity::Activity;
-use timetrax::data::app_config::AppConfig;
-use timetrax::data::identifier::Identifier;
-use timetrax::data::interval::Interval;
-use timetrax::data::job_config::JobConfig;
-use timetrax::data::manager::Manager;
 use uuid::Uuid;
 
 #[derive(Parser)]

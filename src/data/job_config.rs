@@ -26,6 +26,7 @@ pub struct JobConfig {
     /// projects
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub projects: Vec<Project>,
+    // /// daily quotas
 }
 
 impl JobConfig {

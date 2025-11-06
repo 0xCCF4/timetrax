@@ -1,10 +1,10 @@
-use crate::command::ExecutableCommand;
+use crate::cli::ExecutableCommand;
+use crate::data::app_config::AppConfig;
+use crate::data::job_config::JobConfig;
+use crate::data::manager::Manager;
 use clap::Parser;
 use log::{error, info};
 use time::OffsetDateTime;
-use timetrax::data::app_config::AppConfig;
-use timetrax::data::job_config::JobConfig;
-use timetrax::data::manager::Manager;
 
 #[derive(Parser)]
 pub struct CommandPop {}

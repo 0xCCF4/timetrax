@@ -1,13 +1,13 @@
-use crate::command::ExecutableCommand;
+use crate::cli::ExecutableCommand;
+use crate::data::activity::Activity;
+use crate::data::app_config::AppConfig;
+use crate::data::job_config::JobConfig;
+use crate::data::manager::Manager;
 use clap::Parser;
 use itertools::Itertools;
 use log::error;
 use std::borrow::Borrow;
 use time::{Duration, OffsetDateTime};
-use timetrax::data::activity::Activity;
-use timetrax::data::app_config::AppConfig;
-use timetrax::data::job_config::JobConfig;
-use timetrax::data::manager::Manager;
 
 fn format_duration_pretty<Q: Borrow<Duration>>(duration: Q, show_seconds: bool) -> String {
     let duration = duration.borrow();

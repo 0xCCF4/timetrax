@@ -20,6 +20,15 @@
             src = ./.;
             gitAllRefs = true;
             meta.mainProgram = "timetrax";
+            postInstall = ''
+                mkdir -p $out/share/bash-completion/completions
+                mkdir -p $out/share/zsh/site-functions
+                mkdir -p $out/share/fish/vendor_completions.d
+
+                $out/bin/timetrax completion --shell bash > $out/share/bash-completion/completions/timetrax
+                $out/bin/timetrax completion --shell zsh > $out/share/zsh/site-functions/_timetrax
+                $out/bin/timetrax completion --shell fish > $out/share/fish/vendor_completions.d/timetrax.fish
+            '';
           };
         };
     };
