@@ -2,6 +2,7 @@ use crate::az_hash::AZHash;
 use crate::data::activity::Activity;
 use crate::data::blocker::Blocker;
 use crate::data::quota::Quota;
+use digest::Digest;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -28,8 +29,8 @@ pub struct DayInner {
 }
 
 impl AZHash for Day {
-    fn az_hash(&self) -> String {
-        self.date.to_string().az_hash()
+    fn az_hash<D: Digest>(&self) -> String {
+        self.date.to_string().az_hash::<D>()
     }
 }
 

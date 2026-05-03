@@ -1,6 +1,7 @@
 use crate::az_hash::AZHash;
 use crate::data::identifier::Identifier;
 use crate::data::interval::Interval;
+use digest::Digest;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -23,7 +24,7 @@ pub struct Blocker {
 }
 
 impl AZHash for Blocker {
-    fn az_hash(&self) -> String {
-        self.id.az_hash()
+    fn az_hash<D: Digest>(&self) -> String {
+        self.id.az_hash::<D>()
     }
 }

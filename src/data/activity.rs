@@ -2,6 +2,7 @@ use crate::az_hash::AZHash;
 use crate::data::BASIC_TIME_FORMAT;
 use crate::data::identifier::Identifier;
 use crate::data::interval::Interval;
+use digest::Digest;
 use log::error;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -56,7 +57,7 @@ impl Display for Activity {
 }
 
 impl AZHash for Activity {
-    fn az_hash(&self) -> String {
-        self.id.az_hash()
+    fn az_hash<D: Digest>(&self) -> String {
+        self.id.az_hash::<D>()
     }
 }

@@ -1,21 +1,35 @@
+use digest::Digest;
 use itertools::Itertools;
-use sha2::{Digest, Sha256};
 
 /// Allows hashing the object to a string containing only chars a-z
 pub trait AZHash {
     /// hashes the object to a string with chars a-z
-    fn az_hash(&self) -> String;
+    fn az_hash<D: Digest>(&self) -> String;
+
+    /// SHA256 hashes the object to a string with chars a-z
+    fn az_hash_sha256(&self) -> String {
+        self.az_hash::<sha2::Sha256>()
+    }
+
+    /// SHA512 hashes the object to a string with chars a-z
+    fn az_hash_sha512(&self) -> String {
+        self.az_hash::<sha2::Sha512>()
+    }
 }
 
 const U64_MAX_AZ_HASH_LEN: usize = 14;
 
 impl<T: AsRef<[u8]>> AZHash for T {
-    /// sha-256 hashes and output the hash as text with chars a-z
-    fn az_hash(&self) -> String {
-        let hash = Sha256::digest(self.as_ref());
+    /// hashes and output the hash as text with chars a-z
+    fn az_hash<D: Digest>(&self) -> String {
+        let mut digest = D::new();
+        digest.update(self.as_ref());
+        let output = digest.finalize();
+        let hash = output.as_ref();
 
         let mut result = String::new();
         for group in &hash.iter().chunks(8) {
+            // process 8x8 bits = 64 bits at once
             let mut bytes = [0u8; 8];
             let mut count: u8 = 0;
             for (place, value) in bytes.iter_mut().zip(group) {

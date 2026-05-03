@@ -352,7 +352,7 @@ mod tests {
     use super::*;
     use crate::data::activity_class::ActivityClass;
     use crate::data::identifier::Identifier;
-    use time::{Time, UtcDateTime};
+    use time::Time;
 
     #[test]
     fn test_fold_activities() {
@@ -375,6 +375,7 @@ mod tests {
                     },
                 },
             ],
+            projects: vec![],
         };
         let work_day = Activity {
             id: Uuid::nil(),
@@ -384,7 +385,6 @@ mod tests {
                 start: Time::from_hms(9, 0, 0).unwrap(),
                 end: Some(Time::from_hms(18, 0, 0).unwrap()),
             },
-            description: None,
             projects: vec![],
         };
         let break_time = Activity {
@@ -395,7 +395,6 @@ mod tests {
                 start: Time::from_hms(12, 0, 0).unwrap(),
                 end: Some(Time::from_hms(13, 0, 0).unwrap()),
             },
-            description: None,
             projects: vec![],
         };
         let project_meeting = Activity {
@@ -406,7 +405,6 @@ mod tests {
                 start: Time::from_hms(10, 0, 0).unwrap(),
                 end: Some(Time::from_hms(11, 0, 0).unwrap()),
             },
-            description: None,
             projects: vec![],
         };
 
@@ -418,7 +416,6 @@ mod tests {
                 start: Time::from_hms(10, 30, 0).unwrap(),
                 end: Some(Time::from_hms(11, 30, 0).unwrap()),
             },
-            description: None,
             projects: vec![],
         };
 
@@ -430,7 +427,6 @@ mod tests {
                 start: Time::from_hms(13, 0, 0).unwrap(),
                 end: Some(Time::from_hms(14, 0, 0).unwrap()),
             },
-            description: None,
             projects: vec![],
         };
 
@@ -442,7 +438,7 @@ mod tests {
             project_meeting3,
         ];
 
-        let closure = Activity::calculate_activity_closure(&job_config, &day);
+        let closure = Activity::calculate_activity_closure(&job_config, &day, None, None);
         for activity in &closure {
             println!(" - {}", activity);
         }
