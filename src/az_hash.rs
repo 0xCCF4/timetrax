@@ -25,7 +25,7 @@ impl<T: AsRef<[u8]>> AZHash for T {
         let mut digest = D::new();
         digest.update(self.as_ref());
         let output = digest.finalize();
-        let hash = output.as_ref();
+        let hash: &[u8] = output.as_ref();
 
         let mut result = String::new();
         for group in &hash.iter().chunks(8) {
