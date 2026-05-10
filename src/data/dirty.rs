@@ -53,3 +53,55 @@ impl<T> DirtyMarker<T> {
         self.dirty = false;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_from_is_clean() {
+        let d: DirtyMarker<i32> = DirtyMarker::from(42);
+        assert!(!d.is_dirty());
+    }
+
+    #[test]
+    fn clean_constructor_is_clean() {
+        let d = DirtyMarker::clean(99u8);
+        assert!(!d.is_dirty());
+    }
+
+    #[test]
+    fn dirty_constructor_is_dirty() {
+        let d = DirtyMarker::dirty("hello");
+        assert!(d.is_dirty());
+    }
+
+    #[test]
+    fn deref_read_does_not_mark_dirty() {
+        let d = DirtyMarker::clean(5i32);
+        let _ = *d; // immutable deref
+        assert!(!d.is_dirty());
+    }
+
+    #[test]
+    fn deref_mut_marks_dirty() {
+        let mut d = DirtyMarker::clean(5i32);
+        *d = 10;
+        assert!(d.is_dirty());
+        assert_eq!(*d, 10);
+    }
+
+    #[test]
+    fn mark_dirty_sets_flag() {
+        let mut d = DirtyMarker::clean(1u32);
+        d.mark_dirty();
+        assert!(d.is_dirty());
+    }
+
+    #[test]
+    fn mark_clean_clears_flag() {
+        let mut d = DirtyMarker::dirty(1u32);
+        d.mark_clean();
+        assert!(!d.is_dirty());
+    }
+}

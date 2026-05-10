@@ -25,25 +25,18 @@ pub struct AppConfig {
     pub job_config_file_name: String,
     pub job_day_folder_format: String,
     pub work_quota_default: Duration,
+    /// Output machine-readable JSON instead of human-readable text (set from CLI flag).
+    #[serde(skip)]
+    pub json: bool,
 }
 
 impl From<AppConfigDisk> for AppConfig {
     fn from(disk: AppConfigDisk) -> Self {
         let mut result = AppConfig::default();
-
-        if let Some(default_data_path) = disk.default_data_path {
-            result.default_data_path = default_data_path;
-        }
-        if let Some(job_config_file_name) = disk.job_config_file_name {
-            result.job_config_file_name = job_config_file_name;
-        }
-        if let Some(job_day_folder_format) = disk.job_day_folder_format {
-            result.job_day_folder_format = job_day_folder_format;
-        }
-        if let Some(work_quota_default) = disk.work_quota_default {
-            result.work_quota_default = work_quota_default;
-        }
-
+        if let Some(v) = disk.default_data_path { result.default_data_path = v; }
+        if let Some(v) = disk.job_config_file_name { result.job_config_file_name = v; }
+        if let Some(v) = disk.job_day_folder_format { result.job_day_folder_format = v; }
+        if let Some(v) = disk.work_quota_default { result.work_quota_default = v; }
         result
     }
 }
@@ -51,21 +44,20 @@ impl From<AppConfigDisk> for AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            default_data_path: env::var("HOME")
-                .map(|home_env| {
-                    let mut path = PathBuf::from(home_env);
-                    path.push(".timetrax");
-                    path
-                })
-                .unwrap_or_else(|e| {
-                    warn!(
+            default_data_path: env::var("HOME").map_or_else(|e| {
+                warn!(
                         "HOME environment variable not set, defaulting to current directory ({e})."
                     );
-                    PathBuf::from(".timetrax")
-                }),
+                PathBuf::from(".timetrax")
+            }, |home_env| {
+                let mut path = PathBuf::from(home_env);
+                path.push(".timetrax");
+                path
+            }),
             job_config_file_name: "job.json".to_string(),
             job_day_folder_format: "data".to_string(),
             work_quota_default: Duration::hours(8),
+            json: false,
         }
     }
 }

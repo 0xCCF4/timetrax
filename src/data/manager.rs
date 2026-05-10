@@ -6,10 +6,10 @@ use crate::data::job_config::JobConfig;
 use log::{error, trace, warn};
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use time::Date;
 
+/// A day's data along with its on-disk origin (if any), used to decide whether to write on save.
 pub enum AnnotatedDayInformation {
     OnDisk {
         day: DirtyMarker<DayInner>,
@@ -21,6 +21,7 @@ pub enum AnnotatedDayInformation {
 }
 
 impl AnnotatedDayInformation {
+    #[must_use]
     pub fn new(day: DayInner, origin: Option<PathBuf>) -> Self {
         match origin {
             Some(path) => AnnotatedDayInformation::OnDisk {
@@ -32,20 +33,22 @@ impl AnnotatedDayInformation {
             },
         }
     }
+    #[must_use]
     pub fn inner(&self) -> &DayInner {
         match self {
-            AnnotatedDayInformation::OnDisk { day, .. } => day.deref(),
-            AnnotatedDayInformation::Unsaved { day } => day.deref(),
+            AnnotatedDayInformation::OnDisk { day, .. }
+            | AnnotatedDayInformation::Unsaved { day } => day,
         }
     }
     pub fn inner_mut(&mut self) -> &mut DayInner {
         match self {
-            AnnotatedDayInformation::OnDisk { day, .. } => &mut **day,
-            AnnotatedDayInformation::Unsaved { day } => &mut **day,
+            AnnotatedDayInformation::OnDisk { day, .. }
+            | AnnotatedDayInformation::Unsaved { day } => day,
         }
     }
 }
 
+/// Owns all loaded day data and orchestrates load/save for the data directory.
 pub struct Manager<'a> {
     pub app_config: &'a AppConfig,
     pub data_path: PathBuf,
@@ -54,6 +57,10 @@ pub struct Manager<'a> {
 }
 
 impl<'a> Manager<'a> {
+    /// Load `JobConfig` from disk.
+    ///
+    /// # Errors
+    /// Returns an error if the file cannot be opened or contains invalid JSON.
     pub fn open_job_config<P: AsRef<Path>>(
         app_config: &'a AppConfig,
         data_path: P,
@@ -65,7 +72,7 @@ impl<'a> Manager<'a> {
         trace!("Opening job config at path: {}", data_path.display());
         let job = match File::open(&job_config_path) {
             Err(err) => {
-                error!("Failed to open job config file: {}", err);
+                error!("Failed to open job config file: {err}");
                 return Err(err);
             }
             Ok(file) => {
@@ -76,7 +83,7 @@ impl<'a> Manager<'a> {
 
                 let job = match serde_json::from_reader(file) {
                     Err(err) => {
-                        error!("Failed to parse job config file: {}", err);
+                        error!("Failed to parse job config file: {err}");
                         return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, err));
                     }
                     Ok(job) => job,
@@ -89,6 +96,10 @@ impl<'a> Manager<'a> {
 
         Ok(job)
     }
+    /// Load all day files from `data_path` into a `Manager`.
+    ///
+    /// # Errors
+    /// Returns an error if `data_path` cannot be read or a required directory cannot be created.
     pub fn open<P: AsRef<Path>>(app_config: &'a AppConfig, data_path: P) -> std::io::Result<Self> {
         let data_path = data_path.as_ref();
 
@@ -156,10 +167,14 @@ impl<'a> Manager<'a> {
         })
     }
 
+    /// Persist all dirty day files to disk.
+    ///
+    /// # Errors
+    /// Returns the last serialization or write error encountered; all dirty files are attempted.
     pub fn save(&mut self) -> std::io::Result<()> {
         let mut error = None;
 
-        for (date, day_boxed) in self.days.iter_mut() {
+        for (date, day_boxed) in &mut self.days {
             if let AnnotatedDayInformation::OnDisk { day, origin } = day_boxed {
                 if day.is_dirty() {
                     trace!(
@@ -188,17 +203,17 @@ impl<'a> Manager<'a> {
                         },
                     ) {
                         error!("Failed to write day file at {}: {}", origin.display(), e);
-                        error = Some(std::io::Error::new(std::io::ErrorKind::Other, e));
+                        error = Some(std::io::Error::other(e));
                         continue;
                     }
 
-                    day.mark_clean()
+                    day.mark_clean();
                 }
             } else if let AnnotatedDayInformation::Unsaved { day } = day_boxed {
                 let date_format = match date.format(&*BASIC_DATE_FORMAT) {
                     Err(e) => {
-                        error!("Failed to format date {} for saving: {}", date, e);
-                        error = Some(std::io::Error::new(std::io::ErrorKind::Other, e));
+                        error!("Failed to format date {date} for saving: {e}");
+                        error = Some(std::io::Error::other(e));
                         continue;
                     }
                     Ok(f) => f,
@@ -232,7 +247,7 @@ impl<'a> Manager<'a> {
                     },
                 ) {
                     error!("Failed to write day file at {}: {}", day_path.display(), e);
-                    error = Some(std::io::Error::new(std::io::ErrorKind::Other, e));
+                    error = Some(std::io::Error::other(e));
                     continue;
                 }
 
@@ -246,27 +261,30 @@ impl<'a> Manager<'a> {
         if let Some(e) = error { Err(e) } else { Ok(()) }
     }
 
+    /// Return a mutable reference to the day entry for `date`, creating a new unsaved one if absent.
     pub fn get_or_create_day(&mut self, date: Date) -> &mut AnnotatedDayInformation {
         self.days.entry(date).or_insert_with(|| {
-            let x = AnnotatedDayInformation::new(DayInner::default(), None);
+            
 
-            x
+            AnnotatedDayInformation::new(DayInner::default(), None)
         })
     }
 
+    /// Return a shared reference to the inner data for `date`.
     pub fn get_or_create_day_ref(&mut self, date: Date) -> &DayInner {
         self.get_or_create_day(date).inner()
     }
 
+    /// Return a mutable reference to the inner data for `date`.
     pub fn get_or_create_day_mut(&mut self, date: Date) -> &mut DayInner {
         self.get_or_create_day(date).inner_mut()
     }
 }
 
-impl<'a> Drop for Manager<'a> {
+impl Drop for Manager<'_> {
     fn drop(&mut self) {
         if let Err(e) = self.save() {
-            error!("Failed to save data on Manager drop: {}", e);
+            error!("Failed to save data on Manager drop: {e}");
         }
     }
 }

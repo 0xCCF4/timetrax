@@ -21,6 +21,11 @@ pub use status::*;
 pub trait ExecutableCommand {
     type Error;
     type Output;
+
+    /// Run the command, consuming `manager` and potentially mutating `job_config`.
+    ///
+    /// # Errors
+    /// Returns an error if the command cannot complete (e.g. I/O failure, missing resource).
     fn execute(
         &self,
         config: &AppConfig,
@@ -34,10 +39,12 @@ pub trait ExecutableCommand {
 pub struct AppArgs {
     #[command(subcommand)]
     pub command: Option<Command>,
-
     /// Path to the folder to which time tracking data will be saved
     #[arg(short, long)]
     pub data_path: Option<PathBuf>,
+    /// Output machine-readable JSON instead of human-readable text
+    #[arg(long, global = true)]
+    pub json: bool,
     // /// App configuration file. If not provided, default config will be used
     // #[arg(short, long)]
     // pub config: Option<PathBuf>,
@@ -60,6 +67,24 @@ pub enum Command {
     /// Manage activity classes
     #[command(subcommand, aliases = ["classes", "cls", "c", "ac"])]
     Class(CommandClass),
+    // /// Manage per-weekday working time quotas
+    // #[command(subcommand, aliases = ["quotas", "q"])]
+    // Quota(CommandQuota),
+    // /// Report worked vs. expected time per activity class
+    // #[clap(aliases = ["rep", "r"])]
+    // Report(CommandReport),
+    // /// Mark a date range as holiday (removes those days from the work quota)
+    // #[clap(aliases = ["hol", "leave", "vacation"])]
+    // Holiday(CommandHoliday),
+    // /// List, edit, or remove existing activities by hash prefix
+    // #[command(subcommand, aliases = ["act", "a"])]
+    // Activity(CommandActivity),
+    // /// Export activity data or report summaries to CSV
+    // #[clap(aliases = ["exp", "csv"])]
+    // Export(CommandExport),
+    // /// Launch the interactive terminal UI
+    // #[clap(aliases = ["ui", "interactive"])]
+    // Tui,
     /// Generate shell competition scripts
     #[command(aliases = ["complete", "autocomplete", "shell", "completions"])]
     Completion(CommandCompletion),
@@ -86,6 +111,12 @@ impl ExecutableCommand for Command {
             Command::Status(cmd) => cmd.execute(config, job_config, manager),
             Command::Project(cmd) => cmd.execute(config, job_config, manager),
             Command::Class(cmd) => cmd.execute(config, job_config, manager),
+            // Command::Quota(cmd) => cmd.execute(config, job_config, manager),
+            // Command::Report(cmd) => cmd.execute(config, job_config, manager),
+            // Command::Holiday(cmd) => cmd.execute(config, job_config, manager),
+            // Command::Activity(cmd) => cmd.execute(config, job_config, manager),
+            // Command::Export(cmd) => cmd.execute(config, job_config, manager),
+            // Command::Tui => crate::tui::run_tui(config, job_config, manager),
             Command::Completion(cmd) => cmd.execute(config, job_config, manager),
         }
     }

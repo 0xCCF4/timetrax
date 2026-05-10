@@ -15,6 +15,7 @@ pub mod local_time;
 pub mod manager;
 pub mod project;
 pub mod quota;
+pub mod week_quota;
 
 pub static BASIC_TIME_FORMAT: LazyLock<Vec<format_description::BorrowedFormatItem<'_>>> =
     LazyLock::new(|| {
