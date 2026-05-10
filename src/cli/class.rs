@@ -1,4 +1,5 @@
 use crate::cli::ExecutableCommand;
+use crate::cli::json_output::print_json;
 use crate::data::activity_class::{ActivityClass, ActivityClassInner};
 use crate::data::app_config::AppConfig;
 use crate::data::identifier::Identifier;
@@ -6,6 +7,7 @@ use crate::data::job_config::JobConfig;
 use crate::data::manager::Manager;
 use clap::Parser;
 use log::error;
+use serde_json::json;
 use uuid::Uuid;
 
 #[derive(Parser, Default)]
@@ -37,41 +39,42 @@ impl ExecutableCommand for CommandClass {
     type Output = ();
     fn execute(
         &self,
-        _config: &AppConfig,
+        config: &AppConfig,
         job_config: &mut JobConfig,
         _manager: Manager,
     ) -> Result<Self::Output, Self::Error> {
         match self {
             CommandClass::List => {
-                if job_config.classes.is_empty() {
+                if config.json {
+                    let list: Vec<_> = job_config.classes.iter().map(|c| json!({
+                        "id": c.id.to_string(),
+                        "name": c.inner.name,
+                        "priority": c.inner.priority,
+                        "description": c.inner.description,
+                    })).collect();
+                    print_json(&list);
+                } else if job_config.classes.is_empty() {
                     println!("No classes found");
-                    return Ok(());
                 } else {
-                    println!("Class:");
+                    println!("Classes:");
                     for class in &job_config.classes {
                         println!(
-                            " - {}{} ({})",
+                            " - {}{} (priority {}, {})",
                             class.inner.name,
-                            class
-                                .inner
-                                .description
+                            class.inner.description
                                 .as_ref()
-                                .map(|description| format!(": {}", description))
+                                .map(|d| format!(": {d}"))
                                 .unwrap_or_default(),
-                            class.id
+                            class.inner.priority,
+                            class.id,
                         );
                     }
                 }
             }
-            CommandClass::Add {
-                name,
-                description,
-                priority,
-            } => {
+            CommandClass::Add { name, description, priority } => {
                 if job_config.classes.iter().any(|p| p.inner.name == *name) {
-                    error!("Activity class with name '{}' already exists", name);
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    error!("Activity class with name '{name}' already exists");
+                    return Err(std::io::Error::other(
                         "Activity class already exists",
                     ));
                 }
@@ -84,31 +87,42 @@ impl ExecutableCommand for CommandClass {
                         priority: *priority,
                     },
                 };
-                job_config.classes.push(new_class);
-
-                println!("Added new activity class: {}", name);
+                if config.json {
+                    let out = json!({ "id": new_class.id.to_string(), "name": new_class.inner.name, "priority": new_class.inner.priority, "description": new_class.inner.description });
+                    job_config.classes.push(new_class);
+                    print_json(&out);
+                } else {
+                    job_config.classes.push(new_class);
+                    println!("Added new activity class: {name}");
+                }
             }
             CommandClass::Remove { class } => {
-                let len_before = job_config.classes.len();
+                let removed: Vec<_> = job_config.classes.iter()
+                    .filter(|c| match class {
+                        Identifier::Uuid(id) => &c.id == id,
+                        Identifier::ByName(name) => &c.inner.name == name,
+                    })
+                    .map(|c| json!({ "id": c.id.to_string(), "name": c.inner.name }))
+                    .collect();
 
-                job_config.classes.retain(|p| match class {
-                    Identifier::Uuid(id) => &p.id != id,
-                    Identifier::ByName(name) => &p.inner.name != name,
-                });
-
-                let len_after = job_config.classes.len();
-
-                if len_before == len_after {
-                    error!("Activity class not found: {:?}", class);
+                if removed.is_empty() {
+                    error!("Activity class not found: {class:?}");
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::NotFound,
                         "Activity class not found",
                     ));
-                } else {
-                    println!("Removed activity class: {:?}", class);
                 }
 
-                // todo remove reference from other activities
+                job_config.classes.retain(|c| match class {
+                    Identifier::Uuid(id) => &c.id != id,
+                    Identifier::ByName(name) => &c.inner.name != name,
+                });
+
+                if config.json {
+                    print_json(&json!({ "removed": removed }));
+                } else {
+                    println!("Removed activity class: {class:?}");
+                }
             }
         }
 

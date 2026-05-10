@@ -1,4 +1,5 @@
 use crate::cli::ExecutableCommand;
+use crate::cli::json_output::print_json;
 use crate::data::app_config::AppConfig;
 use crate::data::identifier::Identifier;
 use crate::data::job_config::JobConfig;
@@ -6,6 +7,7 @@ use crate::data::manager::Manager;
 use crate::data::project::{Project, ProjectInner};
 use clap::Parser;
 use log::error;
+use serde_json::json;
 use uuid::Uuid;
 
 #[derive(Parser, Default)]
@@ -35,26 +37,30 @@ impl ExecutableCommand for CommandProject {
     type Output = ();
     fn execute(
         &self,
-        _config: &AppConfig,
+        config: &AppConfig,
         job_config: &mut JobConfig,
         _manager: Manager,
     ) -> Result<Self::Output, Self::Error> {
         match self {
             CommandProject::List => {
-                if job_config.projects.is_empty() {
+                if config.json {
+                    let list: Vec<_> = job_config.projects.iter().map(|p| json!({
+                        "id": p.id.to_string(),
+                        "name": p.inner.name,
+                        "description": p.inner.description,
+                    })).collect();
+                    print_json(&list);
+                } else if job_config.projects.is_empty() {
                     println!("No projects found");
-                    return Ok(());
                 } else {
                     println!("Projects:");
                     for project in &job_config.projects {
                         println!(
                             " - {}{} ({})",
                             project.inner.name,
-                            project
-                                .inner
-                                .description
+                            project.inner.description
                                 .as_ref()
-                                .map(|description| format!(": {}", description))
+                                .map(|d| format!(": {d}"))
                                 .unwrap_or_default(),
                             project.id
                         );
@@ -63,9 +69,8 @@ impl ExecutableCommand for CommandProject {
             }
             CommandProject::Add { name, description } => {
                 if job_config.projects.iter().any(|p| p.inner.name == *name) {
-                    error!("Project with name '{}' already exists", name);
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
+                    error!("Project with name '{name}' already exists");
+                    return Err(std::io::Error::other(
                         "Project already exists",
                     ));
                 }
@@ -77,31 +82,42 @@ impl ExecutableCommand for CommandProject {
                         description: description.clone(),
                     },
                 };
-                job_config.projects.push(new_project);
-
-                println!("Added new project: {}", name);
+                if config.json {
+                    let out = json!({ "id": new_project.id.to_string(), "name": new_project.inner.name, "description": new_project.inner.description });
+                    job_config.projects.push(new_project);
+                    print_json(&out);
+                } else {
+                    job_config.projects.push(new_project);
+                    println!("Added new project: {name}");
+                }
             }
             CommandProject::Remove { project } => {
-                let len_before = job_config.projects.len();
+                let removed: Vec<_> = job_config.projects.iter()
+                    .filter(|p| match project {
+                        Identifier::Uuid(id) => &p.id == id,
+                        Identifier::ByName(name) => &p.inner.name == name,
+                    })
+                    .map(|p| json!({ "id": p.id.to_string(), "name": p.inner.name }))
+                    .collect();
+
+                if removed.is_empty() {
+                    error!("Project not found: {project:?}");
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::NotFound,
+                        "Project not found",
+                    ));
+                }
 
                 job_config.projects.retain(|p| match project {
                     Identifier::Uuid(id) => &p.id != id,
                     Identifier::ByName(name) => &p.inner.name != name,
                 });
 
-                let len_after = job_config.projects.len();
-
-                if len_before == len_after {
-                    error!("Project not found: {:?}", project);
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::NotFound,
-                        "Project not found",
-                    ));
+                if config.json {
+                    print_json(&json!({ "removed": removed }));
                 } else {
-                    println!("Removed project: {:?}", project);
+                    println!("Removed project: {project:?}");
                 }
-
-                // todo remove reference from other activities
             }
         }
 

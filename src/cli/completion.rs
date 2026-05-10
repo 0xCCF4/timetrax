@@ -34,22 +34,14 @@ impl ExecutableCommand for CommandCompletion {
         }
 
         if let Some(shell_name) = &self.shell {
-            let shell = Shell::from_str(shell_name, true);
-            let shell = match shell {
-                Ok(shell) => shell,
-                Err(_) => {
-                    error!("Unsupported shell: {}", shell_name);
-
-                    error!("Available shells are:");
-                    for &s in Shell::value_variants() {
-                        error!(" - {}", s);
-                    }
-
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("Unsupported shell: {}", shell_name),
-                    ));
+            let Ok(shell) = Shell::from_str(shell_name, true) else {
+                error!("Unsupported shell: {shell_name}");
+                for &s in Shell::value_variants() {
+                    error!(" - {s}");
                 }
+                return Err(std::io::Error::other(
+                    format!("Unsupported shell: {shell_name}"),
+                ));
             };
 
             let mut stdout = BufWriter::new(std::io::stdout());

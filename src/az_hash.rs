@@ -6,10 +6,10 @@ pub trait AZHash {
     /// hashes the object to a string with chars a-z
     fn az_hash<D: Digest>(&self) -> String;
 
-    /// SHA256 hashes the object to a string with chars a-z
-    fn az_hash_sha256(&self) -> String {
-        self.az_hash::<sha2::Sha256>()
-    }
+    // /// SHA256 hashes the object to a string with chars a-z
+    // fn az_hash_sha256(&self) -> String {
+    //     self.az_hash::<sha2::Sha256>()
+    // }
 
     /// SHA512 hashes the object to a string with chars a-z
     fn az_hash_sha512(&self) -> String {
