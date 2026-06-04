@@ -9,8 +9,7 @@ use std::io::IsTerminal;
 /// of 1.  Longer shared prefixes push the required length up accordingly.
 #[must_use]
 pub fn unique_prefix_map(hashes: &[String]) -> HashMap<String, usize> {
-    let mut map: HashMap<String, usize> =
-        hashes.iter().map(|h| (h.clone(), 1usize)).collect();
+    let mut map: HashMap<String, usize> = hashes.iter().map(|h| (h.clone(), 1usize)).collect();
 
     for i in 0..hashes.len() {
         for j in (i + 1)..hashes.len() {
@@ -20,10 +19,8 @@ pub fn unique_prefix_map(hashes: &[String]) -> HashMap<String, usize> {
                 .take_while(|(a, b)| a == b)
                 .count();
             let needed = shared + 1;
-            *map.entry(hashes[i].clone()).or_insert(1) =
-                map[&hashes[i]].max(needed);
-            *map.entry(hashes[j].clone()).or_insert(1) =
-                map[&hashes[j]].max(needed);
+            *map.entry(hashes[i].clone()).or_insert(1) = map[&hashes[i]].max(needed);
+            *map.entry(hashes[j].clone()).or_insert(1) = map[&hashes[j]].max(needed);
         }
     }
     map
@@ -51,7 +48,12 @@ pub fn all_hashes(manager: &Manager) -> Vec<String> {
     manager
         .days
         .values()
-        .flat_map(|d| d.inner().activities.iter().map(super::super::az_hash::AZHash::az_hash_sha512))
+        .flat_map(|d| {
+            d.inner()
+                .activities
+                .iter()
+                .map(super::super::az_hash::AZHash::az_hash_sha512)
+        })
         .collect()
 }
 

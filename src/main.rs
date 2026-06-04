@@ -19,10 +19,14 @@ fn main() {
     );
 
     let args = AppArgs::parse();
-    let config = AppConfig { json: args.json, ..AppConfig::default() };
+    let config = AppConfig {
+        json: args.json,
+        ..AppConfig::default()
+    };
 
     if let Some(command) = &args.command
-        && let Command::Completion(_) = command {
+        && let Command::Completion(_) = command
+    {
         trace!("Completion command detected, skipping data path setup.");
         if let Err(err) = command.execute(
             &config,
@@ -49,7 +53,10 @@ fn main() {
     let data_dir_exists = match fs::exists(&data_path) {
         Ok(exists) => exists,
         Err(err) => {
-            error!("Failed to check if data path exists at {}: {err}", data_path.display());
+            error!(
+                "Failed to check if data path exists at {}: {err}",
+                data_path.display()
+            );
             std::process::exit(1);
         }
     };
@@ -57,27 +64,39 @@ fn main() {
     if !data_dir_exists {
         info!("Data path does not exist, creating directory.");
         if let Err(err) = fs::create_dir_all(&data_path) {
-            error!("Failed to create data directory at {}: {err}", data_path.display());
+            error!(
+                "Failed to create data directory at {}: {err}",
+                data_path.display()
+            );
             std::process::exit(1);
         }
     }
 
     let job_config_path = data_path.join(&config.job_config_file_name);
     if !job_config_path.exists() {
-        info!("Job config file does not exist at {}, creating default config.", job_config_path.display());
+        info!(
+            "Job config file does not exist at {}, creating default config.",
+            job_config_path.display()
+        );
 
         trace!("Opening job config file {}", job_config_path.display());
         let job_config_file = match fs::File::create(&job_config_path) {
             Ok(file) => file,
             Err(err) => {
-                error!("Failed to job config at {}: {err}", job_config_path.display());
+                error!(
+                    "Failed to job config at {}: {err}",
+                    job_config_path.display()
+                );
                 std::process::exit(1);
             }
         };
 
         trace!("Writing job config to {}", job_config_path.display());
         if let Err(err) = serde_json::to_writer_pretty(job_config_file, &JobConfig::default()) {
-            error!("Failed to write default job config to {}: {err}", job_config_path.display());
+            error!(
+                "Failed to write default job config to {}: {err}",
+                job_config_path.display()
+            );
             std::process::exit(1);
         }
     }
@@ -117,16 +136,25 @@ fn main() {
         let job_config_file = match fs::File::create(&job_config_path) {
             Ok(file) => file,
             Err(err) => {
-                error!("Failed to open job config file at {} for writing: {err}", job_config_path.display());
+                error!(
+                    "Failed to open job config file at {} for writing: {err}",
+                    job_config_path.display()
+                );
                 std::process::exit(1);
             }
         };
 
         if let Err(err) = serde_json::to_writer_pretty(job_config_file, &*job_config) {
-            error!("Failed to write updated job config to {}: {err}", job_config_path.display());
+            error!(
+                "Failed to write updated job config to {}: {err}",
+                job_config_path.display()
+            );
             std::process::exit(1);
         }
 
-        trace!("Successfully saved updated job config to {}", job_config_path.display());
+        trace!(
+            "Successfully saved updated job config to {}",
+            job_config_path.display()
+        );
     }
 }

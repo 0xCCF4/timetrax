@@ -69,7 +69,9 @@ mod tests {
 
     #[test]
     fn serialize_format_hh_mm_ss() {
-        let w = Wrapper { time: Time::from_hms(9, 5, 3).unwrap() };
+        let w = Wrapper {
+            time: Time::from_hms(9, 5, 3).unwrap(),
+        };
         let json = serde_json::to_string(&w).unwrap();
         assert_eq!(json, r#"{"time":"09:05:03"}"#);
     }

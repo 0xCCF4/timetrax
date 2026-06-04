@@ -15,7 +15,8 @@ pub fn print_json(v: &impl Serialize) {
 
 #[must_use]
 pub fn fmt_time_json(t: Time) -> String {
-    t.format(&*BASIC_TIME_FORMAT).unwrap_or_else(|_| "??:??:??".into())
+    t.format(&*BASIC_TIME_FORMAT)
+        .unwrap_or_else(|_| "??:??:??".into())
 }
 
 /// Serialize an activity to a JSON value, including its computed hash.
@@ -29,13 +30,15 @@ pub fn activity_json(
 ) -> Value {
     let hash = activity.az_hash_sha512();
     let class_name = job_config
-        .resolve_class(&activity.class).map_or_else(|| activity.class.to_string(), |c| c.inner.name.clone());
+        .resolve_class(&activity.class)
+        .map_or_else(|| activity.class.to_string(), |c| c.inner.name.clone());
     let projects: Vec<String> = activity
         .projects
         .iter()
         .map(|p| {
             job_config
-                .resolve_project(p).map_or_else(|| p.to_string(), |pr| pr.inner.name.clone())
+                .resolve_project(p)
+                .map_or_else(|| p.to_string(), |pr| pr.inner.name.clone())
         })
         .collect();
 

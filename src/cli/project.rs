@@ -44,11 +44,17 @@ impl ExecutableCommand for CommandProject {
         match self {
             CommandProject::List => {
                 if config.json {
-                    let list: Vec<_> = job_config.projects.iter().map(|p| json!({
-                        "id": p.id.to_string(),
-                        "name": p.inner.name,
-                        "description": p.inner.description,
-                    })).collect();
+                    let list: Vec<_> = job_config
+                        .projects
+                        .iter()
+                        .map(|p| {
+                            json!({
+                                "id": p.id.to_string(),
+                                "name": p.inner.name,
+                                "description": p.inner.description,
+                            })
+                        })
+                        .collect();
                     print_json(&list);
                 } else if job_config.projects.is_empty() {
                     println!("No projects found");
@@ -58,7 +64,9 @@ impl ExecutableCommand for CommandProject {
                         println!(
                             " - {}{} ({})",
                             project.inner.name,
-                            project.inner.description
+                            project
+                                .inner
+                                .description
                                 .as_ref()
                                 .map(|d| format!(": {d}"))
                                 .unwrap_or_default(),
@@ -70,9 +78,7 @@ impl ExecutableCommand for CommandProject {
             CommandProject::Add { name, description } => {
                 if job_config.projects.iter().any(|p| p.inner.name == *name) {
                     error!("Project with name '{name}' already exists");
-                    return Err(std::io::Error::other(
-                        "Project already exists",
-                    ));
+                    return Err(std::io::Error::other("Project already exists"));
                 }
 
                 let new_project = Project {
@@ -92,7 +98,9 @@ impl ExecutableCommand for CommandProject {
                 }
             }
             CommandProject::Remove { project } => {
-                let removed: Vec<_> = job_config.projects.iter()
+                let removed: Vec<_> = job_config
+                    .projects
+                    .iter()
                     .filter(|p| match project {
                         Identifier::Uuid(id) => &p.id == id,
                         Identifier::ByName(name) => &p.inner.name == name,

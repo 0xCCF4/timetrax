@@ -1,8 +1,8 @@
-use digest::Digest;
 use crate::az_hash::AZHash;
 use crate::data::activity::Activity;
 use crate::data::blocker::Blocker;
 use crate::data::quota::Quota;
+use digest::Digest;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

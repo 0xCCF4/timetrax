@@ -1,4 +1,3 @@
-
 use serde::Deserialize;
 use std::sync::LazyLock;
 use time::Duration;
@@ -105,7 +104,9 @@ mod tests {
 
     #[test]
     fn serialize_format() {
-        let w = Wrapper { duration: Duration::hours(2) + Duration::minutes(5) + Duration::seconds(3) };
+        let w = Wrapper {
+            duration: Duration::hours(2) + Duration::minutes(5) + Duration::seconds(3),
+        };
         let json = serde_json::to_string(&w).unwrap();
         assert_eq!(json, r#"{"duration":"02h 05m 03s"}"#);
     }
@@ -115,7 +116,10 @@ mod tests {
         // regex allows "hours", "min", "sec" variants
         let json = r#"{"duration":"02h 05m 03s"}"#;
         let w: Wrapper = serde_json::from_str(json).unwrap();
-        assert_eq!(w.duration, Duration::hours(2) + Duration::minutes(5) + Duration::seconds(3));
+        assert_eq!(
+            w.duration,
+            Duration::hours(2) + Duration::minutes(5) + Duration::seconds(3)
+        );
     }
 
     #[test]
@@ -126,7 +130,9 @@ mod tests {
 
     #[test]
     fn serialize_negative_errors() {
-        let w = Wrapper { duration: Duration::hours(-1) };
+        let w = Wrapper {
+            duration: Duration::hours(-1),
+        };
         assert!(serde_json::to_string(&w).is_err());
     }
 }

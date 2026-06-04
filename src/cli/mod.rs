@@ -7,7 +7,6 @@ use std::path::PathBuf;
 mod activity;
 mod class;
 mod completion;
-mod export;
 pub mod hash;
 mod holiday;
 pub mod json_output;
@@ -22,7 +21,6 @@ pub mod time_input;
 pub use activity::*;
 pub use class::*;
 pub use completion::*;
-pub use export::*;
 pub use holiday::*;
 pub use pop::*;
 pub use project::*;
@@ -94,9 +92,6 @@ pub enum Command {
     /// List, edit, or remove existing activities by hash prefix
     #[command(subcommand, aliases = ["act", "a"])]
     Activity(CommandActivity),
-    /// Export activity data or report summaries to CSV
-    #[clap(aliases = ["exp", "csv"])]
-    Export(CommandExport),
     // /// Launch the interactive terminal UI
     // #[clap(aliases = ["ui", "interactive"])]
     // Tui,
@@ -130,7 +125,6 @@ impl ExecutableCommand for Command {
             Command::Report(cmd) => cmd.execute(config, job_config, manager),
             Command::Holiday(cmd) => cmd.execute(config, job_config, manager),
             Command::Activity(cmd) => cmd.execute(config, job_config, manager),
-            Command::Export(cmd) => cmd.execute(config, job_config, manager),
             // Command::Tui => crate::tui::run_tui(config, job_config, manager),
             Command::Completion(cmd) => cmd.execute(config, job_config, manager),
         }

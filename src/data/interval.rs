@@ -50,7 +50,10 @@ impl Interval {
     /// create a new interval starting at the given time
     #[must_use]
     pub fn start_at(t: time::Time) -> Self {
-        Self { start: t, end: None }
+        Self {
+            start: t,
+            end: None,
+        }
     }
 
     /// complete this interval if it is open
@@ -99,7 +102,10 @@ mod tests {
 
     #[test]
     fn is_complete_true_when_closed() {
-        let iv = Interval { start: t(9, 0, 0), end: Some(t(17, 0, 0)) };
+        let iv = Interval {
+            start: t(9, 0, 0),
+            end: Some(t(17, 0, 0)),
+        };
         assert!(iv.is_complete());
     }
 
@@ -111,13 +117,19 @@ mod tests {
 
     #[test]
     fn duration_some_for_closed_interval() {
-        let iv = Interval { start: t(9, 0, 0), end: Some(t(17, 0, 0)) };
+        let iv = Interval {
+            start: t(9, 0, 0),
+            end: Some(t(17, 0, 0)),
+        };
         assert_eq!(iv.duration(), Some(Duration::hours(8)));
     }
 
     #[test]
     fn duration_handles_sub_hour() {
-        let iv = Interval { start: t(9, 0, 0), end: Some(t(9, 30, 0)) };
+        let iv = Interval {
+            start: t(9, 0, 0),
+            end: Some(t(9, 30, 0)),
+        };
         assert_eq!(iv.duration(), Some(Duration::minutes(30)));
     }
 
@@ -130,7 +142,10 @@ mod tests {
 
     #[test]
     fn complete_at_noop_when_already_closed() {
-        let mut iv = Interval { start: t(9, 0, 0), end: Some(t(12, 0, 0)) };
+        let mut iv = Interval {
+            start: t(9, 0, 0),
+            end: Some(t(12, 0, 0)),
+        };
         iv.complete_at(t(17, 0, 0));
         // original end preserved
         assert_eq!(iv.end, Some(t(12, 0, 0)));
@@ -138,7 +153,10 @@ mod tests {
 
     #[test]
     fn end_time_or_end_of_day_returns_end_when_set() {
-        let iv = Interval { start: t(9, 0, 0), end: Some(t(17, 0, 0)) };
+        let iv = Interval {
+            start: t(9, 0, 0),
+            end: Some(t(17, 0, 0)),
+        };
         assert_eq!(iv.end_time_or_end_of_day(), t(17, 0, 0));
     }
 

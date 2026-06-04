@@ -55,19 +55,18 @@ impl ExecutableCommand for CommandPush {
                 "Failed to resolve classification: {:?}",
                 self.classification
             );
-            return Err(std::io::Error::other(
-                "Failed to resolve classification",
-            ));
+            return Err(std::io::Error::other("Failed to resolve classification"));
         }
 
-        self
-            .project
+        self.project
             .iter()
-            .map(|id| if let Some(p) = job_config.resolve_project(id) { Ok(p) } else {
-                error!("Failed to resolve project: {id:?}");
-                Err(std::io::Error::other(
-                    "Failed to resolve project",
-                ))
+            .map(|id| {
+                if let Some(p) = job_config.resolve_project(id) {
+                    Ok(p)
+                } else {
+                    error!("Failed to resolve project: {id:?}");
+                    Err(std::io::Error::other("Failed to resolve project"))
+                }
             })
             .collect::<Result<Vec<_>, _>>()?;
 

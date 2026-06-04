@@ -42,14 +42,13 @@ impl ExecutableCommand for CommandPop {
 
         if !today.inner().activities.is_empty() {
             let today = today.inner_mut();
-            today
-                .activities
-                .sort_by_key(|a| a.time.start);
+            today.activities.sort_by_key(|a| a.time.start);
 
             let last_open_idx = today
                 .activities
                 .iter()
-                .enumerate().rfind(|(_, a)| !a.time.is_complete())
+                .enumerate()
+                .rfind(|(_, a)| !a.time.is_complete())
                 .map(|(i, _)| i);
 
             if let Some(idx) = last_open_idx {
@@ -60,7 +59,9 @@ impl ExecutableCommand for CommandPop {
                         let removed = today.activities.remove(idx);
                         info!("Deleted activity (end before start): {removed:?}");
                         if config.json {
-                            print_json(&json!({ "deleted": true, "activity": activity_json(&removed, today_date, job_config, None) }));
+                            print_json(
+                                &json!({ "deleted": true, "activity": activity_json(&removed, today_date, job_config, None) }),
+                            );
                         } else {
                             println!("Deleted activity: {removed}");
                         }
@@ -79,7 +80,12 @@ impl ExecutableCommand for CommandPop {
                     info!("Popping activity: {:?}", today.activities[idx]);
                     today.activities[idx].time.complete_at(end);
                     if config.json {
-                        print_json(&activity_json(&today.activities[idx], today_date, job_config, None));
+                        print_json(&activity_json(
+                            &today.activities[idx],
+                            today_date,
+                            job_config,
+                            None,
+                        ));
                     } else {
                         println!("Stopped activity: {}", today.activities[idx]);
                         if today.activities.iter().all(|a| a.time.is_complete()) {

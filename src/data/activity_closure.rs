@@ -34,9 +34,10 @@ impl Activity {
             }
             if let Some(end_time) = end_time.as_mut()
                 && let Some(activity_end) = activity.time.end
-                    && activity_end < *end_time {
-                        *end_time = activity_end;
-                    }
+                && activity_end < *end_time
+            {
+                *end_time = activity_end;
+            }
             {
                 end_time = activity.time.end;
             }
@@ -50,9 +51,10 @@ impl Activity {
             }
 
             if let Some(activity_name) = &activity.name
-                && !names.contains(activity_name) {
-                    names.push(activity_name.clone());
-                }
+                && !names.contains(activity_name)
+            {
+                names.push(activity_name.clone());
+            }
 
             for project in &activity.projects {
                 projects.push(project.clone());
@@ -61,9 +63,10 @@ impl Activity {
 
         if let Some(mut start_time) = start_time {
             if let Some(start_time_limit) = start_time_limit
-                && start_time < *start_time_limit {
-                    start_time = *start_time_limit;
-                }
+                && start_time < *start_time_limit
+            {
+                start_time = *start_time_limit;
+            }
 
             if let Some(end_time_limit) = end_time_limit {
                 if let Some(end_time) = &mut end_time {
@@ -76,9 +79,10 @@ impl Activity {
             }
 
             if let Some(end_time) = end_time
-                && start_time > end_time {
-                    return None;
-                }
+                && start_time > end_time
+            {
+                return None;
+            }
 
             names.sort();
             projects.sort();
@@ -149,10 +153,7 @@ impl Activity {
         ) -> Option<Activity> {
             let folded = Activity::fold_inner(
                 job_config,
-                stack
-                    .iter()
-                    .map(|x| x.0)
-                    .chain(open_ended.iter().copied()),
+                stack.iter().map(|x| x.0).chain(open_ended.iter().copied()),
                 start_time,
                 end_time,
             );
@@ -185,9 +186,10 @@ impl Activity {
         }
 
         if let (Some(start), Some(end)) = (start, end)
-            && start >= end {
-                return Vec::new();
-            }
+            && start >= end
+        {
+            return Vec::new();
+        }
 
         let mut activities: Vec<&Activity> = activities.iter().map(Borrow::borrow).collect_vec();
         // sort by start time
@@ -249,9 +251,7 @@ impl Activity {
                 last_activity_end.as_ref(),
                 Some(&activity.time.start),
             ) {
-                trace!(
-                    "   -> Folding current stack up to start of new activity: {folded}"
-                );
+                trace!("   -> Folding current stack up to start of new activity: {folded}");
                 closure.push(folded);
             }
 
@@ -441,16 +441,18 @@ mod tests {
     #[test]
     fn closure_time_limits_clamp_output() {
         let job_config = make_job_config();
-        let day = vec![make_activity("all-day", "work", (6, 0, 0), Some((22, 0, 0)))];
+        let day = vec![make_activity(
+            "all-day",
+            "work",
+            (6, 0, 0),
+            Some((22, 0, 0)),
+        )];
         let start = Time::from_hms(9, 0, 0).unwrap();
         let end = Time::from_hms(17, 0, 0).unwrap();
         let closure =
             Activity::calculate_activity_closure(&job_config, &day, Some(start), Some(end));
         assert_eq!(closure.len(), 1);
-        assert_eq!(
-            format!("{}", closure[0]),
-            "09:00:00 - 17:00:00: all-day"
-        );
+        assert_eq!(format!("{}", closure[0]), "09:00:00 - 17:00:00: all-day");
     }
 
     #[test]
@@ -467,21 +469,45 @@ mod tests {
         let closure = Activity::calculate_activity_closure(&job_config, &day, None, None);
 
         assert_eq!(closure.len(), 8);
-        assert_eq!(format!("{}", closure[0]), "09:00:00 - 10:00:00: Working at the office");
+        assert_eq!(
+            format!("{}", closure[0]),
+            "09:00:00 - 10:00:00: Working at the office"
+        );
         assert_eq!(closure[0].class, Uuid::from_u128(1).into());
-        assert_eq!(format!("{}", closure[1]), "10:00:00 - 10:30:00: Project meeting; Working at the office");
+        assert_eq!(
+            format!("{}", closure[1]),
+            "10:00:00 - 10:30:00: Project meeting; Working at the office"
+        );
         assert_eq!(closure[1].class, Uuid::from_u128(1).into());
-        assert_eq!(format!("{}", closure[2]), "10:30:00 - 11:00:00: Project meeting; Project meeting 2; Working at the office");
+        assert_eq!(
+            format!("{}", closure[2]),
+            "10:30:00 - 11:00:00: Project meeting; Project meeting 2; Working at the office"
+        );
         assert_eq!(closure[2].class, Uuid::from_u128(1).into());
-        assert_eq!(format!("{}", closure[3]), "11:00:00 - 11:30:00: Project meeting 2; Working at the office");
+        assert_eq!(
+            format!("{}", closure[3]),
+            "11:00:00 - 11:30:00: Project meeting 2; Working at the office"
+        );
         assert_eq!(closure[3].class, Uuid::from_u128(1).into());
-        assert_eq!(format!("{}", closure[4]), "11:30:00 - 12:00:00: Working at the office");
+        assert_eq!(
+            format!("{}", closure[4]),
+            "11:30:00 - 12:00:00: Working at the office"
+        );
         assert_eq!(closure[4].class, Uuid::from_u128(1).into());
-        assert_eq!(format!("{}", closure[5]), "12:00:00 - 13:00:00: Lunch break; Working at the office");
+        assert_eq!(
+            format!("{}", closure[5]),
+            "12:00:00 - 13:00:00: Lunch break; Working at the office"
+        );
         assert_eq!(closure[5].class, Uuid::from_u128(2).into());
-        assert_eq!(format!("{}", closure[6]), "13:00:00 - 14:00:00: Project meeting 3; Working at the office");
+        assert_eq!(
+            format!("{}", closure[6]),
+            "13:00:00 - 14:00:00: Project meeting 3; Working at the office"
+        );
         assert_eq!(closure[6].class, Uuid::from_u128(1).into());
-        assert_eq!(format!("{}", closure[7]), "14:00:00 - 18:00:00: Working at the office");
+        assert_eq!(
+            format!("{}", closure[7]),
+            "14:00:00 - 18:00:00: Working at the office"
+        );
         assert_eq!(closure[7].class, Uuid::from_u128(1).into());
     }
 }

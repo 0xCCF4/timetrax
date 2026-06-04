@@ -2,10 +2,10 @@ use crate::az_hash::AZHash;
 use crate::data::BASIC_TIME_FORMAT;
 use crate::data::identifier::Identifier;
 use crate::data::interval::Interval;
+use digest::Digest;
 use log::error;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use digest::Digest;
 use uuid::Uuid;
 
 /// Activity
@@ -42,11 +42,13 @@ impl Display for Activity {
                     error!("Unable to format time: {e}. Report this as an issue.");
                     "<INVALID>".to_string()
                 }),
-            self.time
-                .end.map_or_else(|| "<OPEN>".to_string(), |t| t.format(&*BASIC_TIME_FORMAT).unwrap_or_else(|e| {
+            self.time.end.map_or_else(
+                || "<OPEN>".to_string(),
+                |t| t.format(&*BASIC_TIME_FORMAT).unwrap_or_else(|e| {
                     error!("Unable to format time: {e}. Report this as an issue.");
                     "<INVALID>".to_string()
-                })),
+                })
+            ),
             self.name
                 .clone()
                 .unwrap_or_else(|| "<NO DESCRIPTION>".to_string())

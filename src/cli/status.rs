@@ -71,7 +71,9 @@ impl ExecutableCommand for CommandStatus {
 
         if today.activities.is_empty() {
             if config.json {
-                print_json(&json!({ "date": today_date.to_string(), "activities": serde_json::Value::Array(vec![]), "total_seconds": 0 }));
+                print_json(
+                    &json!({ "date": today_date.to_string(), "activities": serde_json::Value::Array(vec![]), "total_seconds": 0 }),
+                );
             } else {
                 println!("No activities for today.");
             }
@@ -89,8 +91,13 @@ impl ExecutableCommand for CommandStatus {
             );
 
             // Aligned hash display: max unique prefix (floor 4) + 2 extra.
-            let max_ulen = today.activities.iter()
-                .map(|a| { let h = a.az_hash_sha512(); *umap.get(&h).unwrap_or(&1) })
+            let max_ulen = today
+                .activities
+                .iter()
+                .map(|a| {
+                    let h = a.az_hash_sha512();
+                    *umap.get(&h).unwrap_or(&1)
+                })
                 .max()
                 .unwrap_or(1)
                 .max(4);
@@ -104,30 +111,43 @@ impl ExecutableCommand for CommandStatus {
 
             // Resolve class names up front for column width.
             let resolve_class_name = |activity: &Activity| -> String {
-                if let Some(c) = job_config.resolve_class(&activity.class) { c.inner.name.clone() } else {
+                if let Some(c) = job_config.resolve_class(&activity.class) {
+                    c.inner.name.clone()
+                } else {
                     error!("Failed to resolve class with id {}", activity.class);
                     "ERR".to_string()
                 }
             };
 
-            let ended: Vec<Activity> = today.activities.iter()
+            let ended: Vec<Activity> = today
+                .activities
+                .iter()
                 .filter(|a| a.time.is_complete())
                 .cloned()
                 .collect_vec();
-            let ongoing: Vec<Activity> = today.activities.iter()
+            let ongoing: Vec<Activity> = today
+                .activities
+                .iter()
                 .filter(|a| !a.time.is_complete())
                 .cloned()
                 .collect_vec();
 
-            let total_seconds: i64 = folded.iter()
+            let total_seconds: i64 = folded
+                .iter()
                 .map(|a| a.time.duration().unwrap_or_default().whole_seconds())
                 .sum();
 
             let effective_status = Activity::fold_inner(job_config, ongoing.iter(), None, None)
-                .and_then(|s| job_config.resolve_class(&s.class).map(|c| c.inner.name.clone()));
+                .and_then(|s| {
+                    job_config
+                        .resolve_class(&s.class)
+                        .map(|c| c.inner.name.clone())
+                });
 
             if config.json {
-                let act_json: Vec<_> = today.activities.iter()
+                let act_json: Vec<_> = today
+                    .activities
+                    .iter()
                     .map(|a| {
                         let h = a.az_hash_sha512();
                         let ulen = *umap.get(&h).unwrap_or(&1);
@@ -141,7 +161,9 @@ impl ExecutableCommand for CommandStatus {
                     "activities": act_json,
                 }));
             } else {
-                let class_w = today.activities.iter()
+                let class_w = today
+                    .activities
+                    .iter()
                     .map(|a| resolve_class_name(a).len())
                     .max()
                     .unwrap_or(1);
@@ -149,7 +171,10 @@ impl ExecutableCommand for CommandStatus {
                 match &effective_status {
                     Some(name) => println!("Status: {name}"),
                     None if ongoing.is_empty() => println!("Status: idle"),
-                    None => { error!("Failed to compute status."); println!("Status: ERR"); }
+                    None => {
+                        error!("Failed to compute status.");
+                        println!("Status: ERR");
+                    }
                 }
 
                 println!();
@@ -159,7 +184,8 @@ impl ExecutableCommand for CommandStatus {
                 println!(
                     "\nTotal tracked: {}",
                     format_duration_pretty(
-                        folded.iter()
+                        folded
+                            .iter()
                             .map(|a| a.time.duration().unwrap_or_default())
                             .sum::<Duration>(),
                         true,
@@ -172,7 +198,9 @@ impl ExecutableCommand for CommandStatus {
                         let class = resolve_class_name(activity);
                         println!(
                             "  {} [{:<class_w$}]  {}",
-                            hash_tag(activity), class, activity,
+                            hash_tag(activity),
+                            class,
+                            activity,
                             class_w = class_w,
                         );
                     }
@@ -184,7 +212,9 @@ impl ExecutableCommand for CommandStatus {
                         let class = resolve_class_name(activity);
                         println!(
                             "  {} [{:<class_w$}]  {}",
-                            hash_tag(activity), class, activity,
+                            hash_tag(activity),
+                            class,
+                            activity,
                             class_w = class_w,
                         );
                     }

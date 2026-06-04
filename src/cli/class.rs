@@ -46,12 +46,18 @@ impl ExecutableCommand for CommandClass {
         match self {
             CommandClass::List => {
                 if config.json {
-                    let list: Vec<_> = job_config.classes.iter().map(|c| json!({
-                        "id": c.id.to_string(),
-                        "name": c.inner.name,
-                        "priority": c.inner.priority,
-                        "description": c.inner.description,
-                    })).collect();
+                    let list: Vec<_> = job_config
+                        .classes
+                        .iter()
+                        .map(|c| {
+                            json!({
+                                "id": c.id.to_string(),
+                                "name": c.inner.name,
+                                "priority": c.inner.priority,
+                                "description": c.inner.description,
+                            })
+                        })
+                        .collect();
                     print_json(&list);
                 } else if job_config.classes.is_empty() {
                     println!("No classes found");
@@ -61,7 +67,9 @@ impl ExecutableCommand for CommandClass {
                         println!(
                             " - {}{} (priority {}, {})",
                             class.inner.name,
-                            class.inner.description
+                            class
+                                .inner
+                                .description
                                 .as_ref()
                                 .map(|d| format!(": {d}"))
                                 .unwrap_or_default(),
@@ -71,12 +79,14 @@ impl ExecutableCommand for CommandClass {
                     }
                 }
             }
-            CommandClass::Add { name, description, priority } => {
+            CommandClass::Add {
+                name,
+                description,
+                priority,
+            } => {
                 if job_config.classes.iter().any(|p| p.inner.name == *name) {
                     error!("Activity class with name '{name}' already exists");
-                    return Err(std::io::Error::other(
-                        "Activity class already exists",
-                    ));
+                    return Err(std::io::Error::other("Activity class already exists"));
                 }
 
                 let new_class = ActivityClass {
@@ -97,7 +107,9 @@ impl ExecutableCommand for CommandClass {
                 }
             }
             CommandClass::Remove { class } => {
-                let removed: Vec<_> = job_config.classes.iter()
+                let removed: Vec<_> = job_config
+                    .classes
+                    .iter()
                     .filter(|c| match class {
                         Identifier::Uuid(id) => &c.id == id,
                         Identifier::ByName(name) => &c.inner.name == name,

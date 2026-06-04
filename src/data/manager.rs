@@ -263,11 +263,9 @@ impl<'a> Manager<'a> {
 
     /// Return a mutable reference to the day entry for `date`, creating a new unsaved one if absent.
     pub fn get_or_create_day(&mut self, date: Date) -> &mut AnnotatedDayInformation {
-        self.days.entry(date).or_insert_with(|| {
-            
-
-            AnnotatedDayInformation::new(DayInner::default(), None)
-        })
+        self.days
+            .entry(date)
+            .or_insert_with(|| AnnotatedDayInformation::new(DayInner::default(), None))
     }
 
     /// Return a shared reference to the inner data for `date`.

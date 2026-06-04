@@ -33,10 +33,18 @@ pub struct AppConfig {
 impl From<AppConfigDisk> for AppConfig {
     fn from(disk: AppConfigDisk) -> Self {
         let mut result = AppConfig::default();
-        if let Some(v) = disk.default_data_path { result.default_data_path = v; }
-        if let Some(v) = disk.job_config_file_name { result.job_config_file_name = v; }
-        if let Some(v) = disk.job_day_folder_format { result.job_day_folder_format = v; }
-        if let Some(v) = disk.work_quota_default { result.work_quota_default = v; }
+        if let Some(v) = disk.default_data_path {
+            result.default_data_path = v;
+        }
+        if let Some(v) = disk.job_config_file_name {
+            result.job_config_file_name = v;
+        }
+        if let Some(v) = disk.job_day_folder_format {
+            result.job_day_folder_format = v;
+        }
+        if let Some(v) = disk.work_quota_default {
+            result.work_quota_default = v;
+        }
         result
     }
 }
@@ -44,16 +52,19 @@ impl From<AppConfigDisk> for AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            default_data_path: env::var("HOME").map_or_else(|e| {
-                warn!(
+            default_data_path: env::var("HOME").map_or_else(
+                |e| {
+                    warn!(
                         "HOME environment variable not set, defaulting to current directory ({e})."
                     );
-                PathBuf::from(".timetrax")
-            }, |home_env| {
-                let mut path = PathBuf::from(home_env);
-                path.push(".timetrax");
-                path
-            }),
+                    PathBuf::from(".timetrax")
+                },
+                |home_env| {
+                    let mut path = PathBuf::from(home_env);
+                    path.push(".timetrax");
+                    path
+                },
+            ),
             job_config_file_name: "job.json".to_string(),
             job_day_folder_format: "data".to_string(),
             work_quota_default: Duration::hours(8),

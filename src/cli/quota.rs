@@ -77,17 +77,25 @@ impl ExecutableCommand for CommandQuota {
                     }
                     for &wd in &ALL_WEEKDAYS {
                         let entries = job_config.week_quotas.for_weekday(wd);
-                        if entries.is_empty() { continue; }
+                        if entries.is_empty() {
+                            continue;
+                        }
                         println!("{}:", weekday_name(wd));
                         for q in entries {
-                            let class_name = job_config.resolve_class(&q.class).map_or_else(|| q.class.as_str_repr(), |c| c.inner.name.as_str());
+                            let class_name = job_config
+                                .resolve_class(&q.class)
+                                .map_or_else(|| q.class.as_str_repr(), |c| c.inner.name.as_str());
                             println!("  {:<16} {}", class_name, fmt_duration(q.duration));
                         }
                     }
                 }
             }
 
-            CommandQuota::Set { day, class, duration } => {
+            CommandQuota::Set {
+                day,
+                class,
+                duration,
+            } => {
                 if job_config.resolve_class(class).is_none() {
                     error!("Failed to resolve class: {class:?}");
                     return Err(std::io::Error::new(
@@ -99,12 +107,22 @@ impl ExecutableCommand for CommandQuota {
                 if let Some(existing) = entries.iter_mut().find(|q| q.class == *class) {
                     existing.duration = duration.0;
                 } else {
-                    entries.push(ClassQuota { class: class.clone(), duration: duration.0 });
+                    entries.push(ClassQuota {
+                        class: class.clone(),
+                        duration: duration.0,
+                    });
                 }
                 if config.json {
-                    print_json(&json!({ "day": weekday_name(day.0), "class": class.to_string(), "duration_seconds": duration.0.whole_seconds() }));
+                    print_json(
+                        &json!({ "day": weekday_name(day.0), "class": class.to_string(), "duration_seconds": duration.0.whole_seconds() }),
+                    );
                 } else {
-                    println!("Set quota for {} on {}: {}", class, weekday_name(day.0), fmt_duration(duration.0));
+                    println!(
+                        "Set quota for {} on {}: {}",
+                        class,
+                        weekday_name(day.0),
+                        fmt_duration(duration.0)
+                    );
                 }
             }
 
@@ -120,7 +138,9 @@ impl ExecutableCommand for CommandQuota {
                     ));
                 }
                 if config.json {
-                    print_json(&json!({ "removed": true, "day": weekday_name(day.0), "class": class.to_string() }));
+                    print_json(
+                        &json!({ "removed": true, "day": weekday_name(day.0), "class": class.to_string() }),
+                    );
                 } else {
                     println!("Removed quota for {} on {}", class, weekday_name(day.0));
                 }

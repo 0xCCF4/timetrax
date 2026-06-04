@@ -39,9 +39,9 @@ impl ExecutableCommand for CommandCompletion {
                 for &s in Shell::value_variants() {
                     error!(" - {s}");
                 }
-                return Err(std::io::Error::other(
-                    format!("Unsupported shell: {shell_name}"),
-                ));
+                return Err(std::io::Error::other(format!(
+                    "Unsupported shell: {shell_name}"
+                )));
             };
 
             let mut stdout = BufWriter::new(std::io::stdout());

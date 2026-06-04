@@ -72,8 +72,13 @@ mod tests {
     fn default_all_empty() {
         let wq = WeekQuotas::default();
         for wd in [
-            Weekday::Monday, Weekday::Tuesday, Weekday::Wednesday,
-            Weekday::Thursday, Weekday::Friday, Weekday::Saturday, Weekday::Sunday,
+            Weekday::Monday,
+            Weekday::Tuesday,
+            Weekday::Wednesday,
+            Weekday::Thursday,
+            Weekday::Friday,
+            Weekday::Saturday,
+            Weekday::Sunday,
         ] {
             assert!(wq.for_weekday(wd).is_empty(), "{wd:?} should be empty");
         }
@@ -94,8 +99,10 @@ mod tests {
     #[test]
     fn for_weekday_mut_pushes_to_correct_field() {
         let mut wq = WeekQuotas::default();
-        wq.for_weekday_mut(Weekday::Wednesday).push(make_quota("work", 8));
-        wq.for_weekday_mut(Weekday::Friday).push(make_quota("work", 6));
+        wq.for_weekday_mut(Weekday::Wednesday)
+            .push(make_quota("work", 8));
+        wq.for_weekday_mut(Weekday::Friday)
+            .push(make_quota("work", 6));
 
         assert_eq!(wq.wednesday.len(), 1);
         assert_eq!(wq.friday.len(), 1);
@@ -105,25 +112,39 @@ mod tests {
     #[test]
     fn for_weekday_mut_allows_upsert() {
         let mut wq = WeekQuotas::default();
-        wq.for_weekday_mut(Weekday::Thursday).push(make_quota("work", 8));
+        wq.for_weekday_mut(Weekday::Thursday)
+            .push(make_quota("work", 8));
         // Update
         wq.for_weekday_mut(Weekday::Thursday)[0].duration = Duration::hours(4);
 
-        assert_eq!(wq.for_weekday(Weekday::Thursday)[0].duration, Duration::hours(4));
+        assert_eq!(
+            wq.for_weekday(Weekday::Thursday)[0].duration,
+            Duration::hours(4)
+        );
     }
 
     #[test]
     fn all_weekday_variants_reachable() {
         let mut wq = WeekQuotas::default();
         for wd in [
-            Weekday::Monday, Weekday::Tuesday, Weekday::Wednesday,
-            Weekday::Thursday, Weekday::Friday, Weekday::Saturday, Weekday::Sunday,
+            Weekday::Monday,
+            Weekday::Tuesday,
+            Weekday::Wednesday,
+            Weekday::Thursday,
+            Weekday::Friday,
+            Weekday::Saturday,
+            Weekday::Sunday,
         ] {
             wq.for_weekday_mut(wd).push(make_quota("work", 8));
         }
         for wd in [
-            Weekday::Monday, Weekday::Tuesday, Weekday::Wednesday,
-            Weekday::Thursday, Weekday::Friday, Weekday::Saturday, Weekday::Sunday,
+            Weekday::Monday,
+            Weekday::Tuesday,
+            Weekday::Wednesday,
+            Weekday::Thursday,
+            Weekday::Friday,
+            Weekday::Saturday,
+            Weekday::Sunday,
         ] {
             assert_eq!(wq.for_weekday(wd).len(), 1);
         }

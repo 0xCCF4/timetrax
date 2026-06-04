@@ -48,9 +48,9 @@ fn resolve_prefix(manager: &Manager, prefix: &str) -> std::io::Result<(Date, Uui
                 let rendered = render_hash(hash, ulen, ulen + 4, color);
                 eprintln!("  {date}  {rendered}");
             }
-            Err(std::io::Error::other(
-                format!("ambiguous prefix '{prefix}': {n} matches"),
-            ))
+            Err(std::io::Error::other(format!(
+                "ambiguous prefix '{prefix}': {n} matches"
+            )))
         }
     }
 }
@@ -118,7 +118,11 @@ pub enum CommandActivity {
     },
 }
 
-enum ListFilter { All, Single(Date), Range(Option<Date>, Option<Date>) }
+enum ListFilter {
+    All,
+    Single(Date),
+    Range(Option<Date>, Option<Date>),
+}
 
 struct ListRow {
     date: Date,
@@ -140,7 +144,12 @@ impl ExecutableCommand for CommandActivity {
         mut manager: Manager,
     ) -> Result<Self::Output, Self::Error> {
         match self {
-            CommandActivity::List { date, all, from, to } => {
+            CommandActivity::List {
+                date,
+                all,
+                from,
+                to,
+            } => {
                 let today = OffsetDateTime::now_local()
                     .unwrap_or_else(|e| {
                         error!("Failed to get local time. Falling back to UTC: {e}");
@@ -172,12 +181,15 @@ impl ExecutableCommand for CommandActivity {
                             f.is_none_or(|f| *day_date >= f) && t.is_none_or(|t| *day_date <= t)
                         }
                     };
-                    if !include { continue; }
+                    if !include {
+                        continue;
+                    }
                     for activity in &day_info.inner().activities {
                         let hash = activity.az_hash_sha512();
                         let ulen = *umap.get(&hash).unwrap_or(&1);
                         let class = job_config
-                            .resolve_class(&activity.class).map_or_else(|| "?".to_string(), |c| c.inner.name.clone());
+                            .resolve_class(&activity.class)
+                            .map_or_else(|| "?".to_string(), |c| c.inner.name.clone());
                         rows.push(ListRow {
                             date: *day_date,
                             hash,
@@ -196,21 +208,31 @@ impl ExecutableCommand for CommandActivity {
                     }
                 } else if config.json {
                     // For JSON we need Activity refs - re-iterate manager with umap
-                    let json_rows: Vec<_> = manager.days.iter()
+                    let json_rows: Vec<_> = manager
+                        .days
+                        .iter()
                         .flat_map(|(day_date, day_info)| {
                             let include = match &filter {
                                 ListFilter::All => true,
                                 ListFilter::Single(d) => day_date == d,
                                 ListFilter::Range(f, t) => {
-                                    f.is_none_or(|f| *day_date >= f) && t.is_none_or(|t| *day_date <= t)
+                                    f.is_none_or(|f| *day_date >= f)
+                                        && t.is_none_or(|t| *day_date <= t)
                                 }
                             };
-                            if !include { return vec![]; }
-                            day_info.inner().activities.iter().map(|a| {
-                                let h = a.az_hash_sha512();
-                                let ulen = *umap.get(&h).unwrap_or(&1);
-                                activity_json(a, *day_date, job_config, Some(ulen))
-                            }).collect::<Vec<_>>()
+                            if !include {
+                                return vec![];
+                            }
+                            day_info
+                                .inner()
+                                .activities
+                                .iter()
+                                .map(|a| {
+                                    let h = a.az_hash_sha512();
+                                    let ulen = *umap.get(&h).unwrap_or(&1);
+                                    activity_json(a, *day_date, job_config, Some(ulen))
+                                })
+                                .collect::<Vec<_>>()
                         })
                         .collect();
                     print_json(&json_rows);
@@ -224,7 +246,10 @@ impl ExecutableCommand for CommandActivity {
                         let rendered = render_hash(&r.hash, r.ulen, total_len, color);
                         println!(
                             "{}  {}  [{:<class_w$}]  {}",
-                            r.date, rendered, r.class, r.activity_str,
+                            r.date,
+                            rendered,
+                            r.class,
+                            r.activity_str,
                             class_w = class_w,
                         );
                     }
@@ -245,13 +270,14 @@ impl ExecutableCommand for CommandActivity {
                 let (date, uuid) = resolve_prefix(&manager, prefix)?;
 
                 if let Some(cls) = classification
-                    && job_config.resolve_class(cls).is_none() {
-                        error!("Class not found: {cls}");
-                        return Err(std::io::Error::new(
-                            std::io::ErrorKind::NotFound,
-                            format!("class '{cls}' not found"),
-                        ));
-                    }
+                    && job_config.resolve_class(cls).is_none()
+                {
+                    error!("Class not found: {cls}");
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::NotFound,
+                        format!("class '{cls}' not found"),
+                    ));
+                }
                 for proj in add_project.iter().chain(remove_project.iter()) {
                     if job_config.resolve_project(proj).is_none() {
                         error!("Project not found: {proj}");
@@ -312,7 +338,8 @@ impl ExecutableCommand for CommandActivity {
 
                     let day = manager.get_or_create_day(target_date).inner_mut();
                     let before = day.activities.len();
-                    day.activities.retain(|a| a.name.as_deref() != Some(name.as_str()));
+                    day.activities
+                        .retain(|a| a.name.as_deref() != Some(name.as_str()));
                     let removed = before - day.activities.len();
 
                     match removed {
@@ -325,23 +352,31 @@ impl ExecutableCommand for CommandActivity {
                         }
                         n => {
                             if config.json {
-                                print_json(&json!({ "removed": n, "name": name, "date": target_date.to_string() }));
+                                print_json(
+                                    &json!({ "removed": n, "name": name, "date": target_date.to_string() }),
+                                );
                             } else if n == 1 {
                                 println!("Removed activity '{name}' from {target_date}");
                             } else {
-                                println!("Removed {n} activities named '{name}' from {target_date}");
+                                println!(
+                                    "Removed {n} activities named '{name}' from {target_date}"
+                                );
                             }
                         }
                     }
                 } else {
-                    let prefix = prefix.as_deref().expect("prefix is required when --name is absent");
+                    let prefix = prefix
+                        .as_deref()
+                        .expect("prefix is required when --name is absent");
                     let (date, uuid) = resolve_prefix(&manager, prefix)?;
 
                     let day = manager.get_or_create_day(date).inner_mut();
                     day.activities.retain(|a| a.id != uuid);
 
                     if config.json {
-                        print_json(&json!({ "removed": 1, "date": date.to_string(), "id": uuid.to_string() }));
+                        print_json(
+                            &json!({ "removed": 1, "date": date.to_string(), "id": uuid.to_string() }),
+                        );
                     } else {
                         println!("Removed activity from {date}");
                     }
@@ -383,7 +418,10 @@ mod tests {
     }
 
     fn make_day_with_activities(activities: Vec<Activity>) -> DirtyMarker<DayInner> {
-        DirtyMarker::from(DayInner { activities, ..DayInner::default() })
+        DirtyMarker::from(DayInner {
+            activities,
+            ..DayInner::default()
+        })
     }
 
     fn manager_with_days(
@@ -399,7 +437,11 @@ mod tests {
                 },
             );
         }
-        Manager { app_config: config, days: map, data_path: PathBuf::new() }
+        Manager {
+            app_config: config,
+            days: map,
+            data_path: PathBuf::new(),
+        }
     }
 
     fn date(y: i32, m: u8, d: u8) -> time::Date {
@@ -477,13 +519,18 @@ mod tests {
         let d1 = date(2024, 1, 10);
         let d2 = date(2024, 1, 15);
         let d3 = date(2024, 1, 20);
-        let manager = manager_with_days(&config, vec![
-            (d1, vec![make_activity_named("early", 9, 10)]),
-            (d2, vec![make_activity_named("mid", 9, 10)]),
-            (d3, vec![make_activity_named("late", 9, 10)]),
-        ]);
+        let manager = manager_with_days(
+            &config,
+            vec![
+                (d1, vec![make_activity_named("early", 9, 10)]),
+                (d2, vec![make_activity_named("mid", 9, 10)]),
+                (d3, vec![make_activity_named("late", 9, 10)]),
+            ],
+        );
         let filter = ListFilter::Range(Some(d1), Some(d2));
-        let visible: Vec<_> = manager.days.iter()
+        let visible: Vec<_> = manager
+            .days
+            .iter()
             .filter(|(day_date, _)| match filter {
                 ListFilter::Range(f, t) => {
                     f.is_none_or(|f| **day_date >= f) && t.is_none_or(|t| **day_date <= t)
@@ -499,12 +546,17 @@ mod tests {
         let config = make_config();
         let d1 = date(2024, 1, 10);
         let d2 = date(2024, 1, 20);
-        let manager = manager_with_days(&config, vec![
-            (d1, vec![make_activity_named("a", 9, 10)]),
-            (d2, vec![make_activity_named("b", 9, 10)]),
-        ]);
+        let manager = manager_with_days(
+            &config,
+            vec![
+                (d1, vec![make_activity_named("a", 9, 10)]),
+                (d2, vec![make_activity_named("b", 9, 10)]),
+            ],
+        );
         let filter = ListFilter::Range(Some(d1), None);
-        let visible: Vec<_> = manager.days.iter()
+        let visible: Vec<_> = manager
+            .days
+            .iter()
             .filter(|(day_date, _)| match filter {
                 ListFilter::Range(f, t) => {
                     f.is_none_or(|f| **day_date >= f) && t.is_none_or(|t| **day_date <= t)
@@ -520,7 +572,10 @@ mod tests {
         let a1 = make_activity_named("standup", 9, 10);
         let a2 = make_activity_named("standup", 14, 15);
         let a3 = make_activity_named("other", 11, 12);
-        let mut day = DayInner { activities: vec![a1, a2, a3], ..DayInner::default() };
+        let mut day = DayInner {
+            activities: vec![a1, a2, a3],
+            ..DayInner::default()
+        };
 
         let before = day.activities.len();
         let name = "standup";
@@ -535,10 +590,14 @@ mod tests {
     #[test]
     fn remove_name_zero_when_not_found() {
         let a1 = make_activity_named("other", 9, 10);
-        let mut day = DayInner { activities: vec![a1], ..DayInner::default() };
+        let mut day = DayInner {
+            activities: vec![a1],
+            ..DayInner::default()
+        };
 
         let before = day.activities.len();
-        day.activities.retain(|a| a.name.as_deref() != Some("missing"));
+        day.activities
+            .retain(|a| a.name.as_deref() != Some("missing"));
         let removed = before - day.activities.len();
 
         assert_eq!(removed, 0);

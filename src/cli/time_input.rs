@@ -62,12 +62,8 @@ impl FromStr for TimeAt {
             [h, m, sec] => (h, m, sec),
             _ => return Err(format!("Invalid time '{s}' - expected HH:MM or HH:MM:SS")),
         };
-        let hour: u8 = h
-            .parse()
-            .map_err(|_| format!("Invalid hour in '{s}'"))?;
-        let minute: u8 = m
-            .parse()
-            .map_err(|_| format!("Invalid minute in '{s}'"))?;
+        let hour: u8 = h.parse().map_err(|_| format!("Invalid hour in '{s}'"))?;
+        let minute: u8 = m.parse().map_err(|_| format!("Invalid minute in '{s}'"))?;
         let second: u8 = sec
             .parse()
             .map_err(|_| format!("Invalid second in '{s}'"))?;
@@ -129,7 +125,9 @@ impl FromStr for WeekdayInput {
             "fri" | "fr" | "friday" => Ok(WeekdayInput(Weekday::Friday)),
             "sat" | "sa" | "saturday" => Ok(WeekdayInput(Weekday::Saturday)),
             "sun" | "su" | "sunday" => Ok(WeekdayInput(Weekday::Sunday)),
-            _ => Err(format!("Unknown weekday '{s}' - use mon/tue/wed/thu/fri/sat/sun")),
+            _ => Err(format!(
+                "Unknown weekday '{s}' - use mon/tue/wed/thu/fri/sat/sun"
+            )),
         }
     }
 }
@@ -159,12 +157,28 @@ impl FromStr for DateInput {
 #[must_use]
 pub fn fmt_duration(d: Duration) -> String {
     let secs = d.whole_seconds().unsigned_abs();
-    let h = secs / 3600;
-    let m = (secs % 3600) / 60;
-    if h > 0 {
-        format!("{h}h {m:02}m")
+
+    let whole_days = d.whole_days().unsigned_abs();
+    let whole_years = whole_days / 365;
+    let whole_days = whole_days % 365;
+
+    let whole_hours = d.whole_hours().unsigned_abs() % 24;
+    let whole_minutes = d.whole_minutes().unsigned_abs() % 60;
+
+    let whole_seconds = d.whole_seconds().unsigned_abs() % 60;
+
+    let negative = if d.is_negative() { "-" } else { "" };
+
+    if whole_years > 0 {
+        format!("{negative:>1}{whole_years}y {whole_days:>2}d {whole_hours:>2}h")
+    } else if whole_days > 0 {
+        format!("{negative:>1}{whole_days:>2}d {whole_hours:>2}h {whole_minutes:>2}m")
+    } else if whole_hours > 0 {
+        format!("{negative:>1}{whole_hours:>2}h {whole_minutes:>2}m")
+    } else if whole_minutes > 0 {
+        format!("{negative:>1}{whole_minutes:>2}m")
     } else {
-        format!("{m}m")
+        format!("{negative:>1}{whole_seconds:>2}s")
     }
 }
 
@@ -370,7 +384,10 @@ mod tests {
     #[test]
     fn date_input_valid() {
         let d: DateInput = "2024-03-15".parse().unwrap();
-        assert_eq!(d.0, time::Date::from_calendar_date(2024, time::Month::March, 15).unwrap());
+        assert_eq!(
+            d.0,
+            time::Date::from_calendar_date(2024, time::Month::March, 15).unwrap()
+        );
     }
 
     #[test]
@@ -413,7 +430,10 @@ mod tests {
 
     #[test]
     fn fmt_duration_hours_and_minutes() {
-        assert_eq!(fmt_duration(Duration::hours(1) + Duration::minutes(30)), "1h 30m");
+        assert_eq!(
+            fmt_duration(Duration::hours(1) + Duration::minutes(30)),
+            "1h 30m"
+        );
     }
 
     #[test]
